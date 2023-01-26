@@ -6,11 +6,17 @@ use std::process::Command;
 
 pub struct Runner {
     config: MainConfig,
+    extra: ExtraConfig,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 struct MainConfig {
     games: Vec<Game>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ExtraConfig {
+    runner_path: String
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -29,10 +35,17 @@ impl ::std::default::Default for MainConfig {
     }
 }
 
+impl ::std::default::Default for ExtraConfig {
+    fn default() -> Self {
+        Self { runner_path: "".to_string() }
+    }
+}
+
 impl Runner {
     pub fn new() -> Self {
-        let cfg = confy::load("game-rs", None).unwrap();
-        Runner { config: cfg }
+        let cfg: MainConfig = confy::load("game-rs", None).unwrap();
+        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig { runner_path: "".to_string() });
+        Runner { config: cfg, extra }
     }
 
     pub fn run_intr(&self) {
@@ -47,31 +60,34 @@ impl Runner {
         let exect_path = self.config.games[id].exect_path.clone();
         let use_nvidia = self.config.games[id].use_nvidia.clone();
 
-        let nvidia_envs: HashMap<&str, &str> = {
+        let mut envs: HashMap<&str, &str> = {
             if use_nvidia {
                 HashMap::from([
                     ("__NV_PRIME_RENDER_OFFLOAD", "1"),
                     ("__NV_PRIME_RENDER_OFFLOAD", "NVIDIA-G0"),
                     ("__GLX_VENDOR_LIBRARY_NAME", "nvidia"),
                     ("__VK_LAYER_NV_optimus", "NVIDIA_only"),
-                    ("WINEPREFIX", prefix_path.as_str()),
                 ])
             } else {
-                HashMap::from([("WINEPREFIX", prefix_path.as_str())])
+                HashMap::from([])
             }
         };
 
+        if prefix_path != "".to_string() {
+            envs.insert("WINEPREFIX", prefix_path.as_str());
+        }
+
         #[cfg(not(feature = "nixos"))]
-        runner_default(&nvidia_envs, runner_path, exect_path);
+        runner_default(&envs, runner_path, exect_path);
 
         #[cfg(feature = "nixos")]
-        runner_nixos(&nvidia_envs, runner_path, exect_path);
+        runner_nixos(&envs, runner_path, exect_path);
     }
 
     pub fn config_editor(&mut self) {
         let mode = FuzzySelect::with_theme(&ColorfulTheme::default())
             .default(0)
-            .items(&vec!["Add game", "Edit game", "Delete game"])
+            .items(&vec!["Add game", "Edit game", "Delete game", "Set default runner path"])
             .interact_opt()
             .unwrap()
             .unwrap();
@@ -82,6 +98,9 @@ impl Runner {
             self.edit_game()
         } else if mode == 2 as usize {
             self.delete_game()
+        } else if mode == 3 as usize {
+            let path: String = Input::new().with_prompt("Enter runner executable path: ").interact_text().unwrap();
+            confy::store("game-rs", "Extra", ExtraConfig{runner_path: path.clone()}).unwrap();
         } else {
             panic!("What the fuck");
         }
@@ -100,12 +119,14 @@ impl Runner {
 
         let runner_path: String = Input::new()
             .with_prompt("Path to proton/wine binary")
+            .default(self.extra.runner_path.clone())
             .interact_text()
             .unwrap();
 
         let prefix_path: String = Input::new()
-            .with_prompt("Path to prefix")
-            .default("$HOME/.wine".to_string())
+            .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
+            .default("".to_string())
+            .show_default(false)
             .interact_text()
             .unwrap();
 
@@ -147,13 +168,14 @@ impl Runner {
         println!("Executable Path: {}", game.exect_path);
         println!("Prefix: {}", game.prefix_path);
 
-        let confirmation: bool =  Confirm::new()
+        let confirmation: bool = Confirm::new()
             .with_prompt(format!(
                 "Are you sure you want to delete {} - {}",
                 game.id, game.name
             ))
             .interact_opt()
-            .unwrap().unwrap();
+            .unwrap()
+            .unwrap();
 
         if confirmation {
             self.config.games.remove(id);
@@ -173,11 +195,12 @@ impl Runner {
             .collect();
 
         let id: usize = FuzzySelect::new()
-            .with_prompt("Which game to delete?")
+            .with_prompt("Select game")
             .default(0)
             .items(&prompts)
             .interact_opt()
-            .unwrap().unwrap();
+            .unwrap()
+            .unwrap();
 
         id
     }
