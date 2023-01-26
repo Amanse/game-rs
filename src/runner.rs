@@ -36,7 +36,12 @@ impl Runner {
     }
 
     pub fn run_intr(self) {
-        let prompts: Vec<String> = self.config.games.iter().map(|g| format!("{} - {}", g.id.clone(), g.name.clone())).collect();
+        let prompts: Vec<String> = self
+            .config
+            .games
+            .iter()
+            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
+            .collect();
         let game = FuzzySelect::new()
             .default(0)
             .items(&prompts)
@@ -118,7 +123,8 @@ impl Runner {
         let use_nvidia = Confirm::new()
             .with_prompt("Do you want to run this with nvidia gpu?")
             .interact_opt()
-            .unwrap().unwrap();
+            .unwrap()
+            .unwrap();
 
         let id: usize = {
             if let Some(v) = self.config.games.last() {
@@ -128,24 +134,58 @@ impl Runner {
             }
         };
 
-        let new_game = Game{
+        let new_game = Game {
             prefix_path,
             name,
             id,
             use_nvidia,
             exect_path,
-            runner_path
+            runner_path,
         };
 
         self.config.games.push(new_game);
 
         confy::store("game-rs", None, self.config.clone()).unwrap();
-        
     }
 
     fn edit_game(&mut self) {}
 
-    fn delete_game(&mut self) {}
+    fn delete_game(&mut self) {
+        let prompts: Vec<String> = self
+            .config
+            .games
+            .iter()
+            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
+            .collect();
+
+        let id: usize = FuzzySelect::new()
+            .with_prompt("Which game to delete?")
+            .default(0)
+            .items(&prompts)
+            .interact_opt()
+            .unwrap().unwrap();
+
+        let game = self.config.games[id].clone();
+
+        println!("Executable Path: {}", game.exect_path);
+        println!("Prefix: {}", game.prefix_path);
+
+        let confirmation: bool =  Confirm::new()
+            .with_prompt(format!(
+                "Are you sure you want to delete {} - {}",
+                game.id, game.name
+            ))
+            .interact_opt()
+            .unwrap().unwrap();
+
+        if confirmation {
+            self.config.games.remove(id);
+            confy::store("game-rs", None, self.config.clone()).unwrap();
+            println!("Deleted {}", game.name);
+        } else {
+            std::process::exit(1);
+        }
+    }
 }
 
 #[cfg(feature = "nixos")]
