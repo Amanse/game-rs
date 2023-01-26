@@ -5,13 +5,16 @@ mod runner;
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
-    run: RunCommand,
+    run: Option<RunCommand>,
+    #[arg(short, long)]
+    config: bool
 }
 
 #[derive(Subcommand)]
 enum RunCommand {
     Run(Run),
 }
+
 
 #[derive(Args)]
 struct Run {
@@ -20,14 +23,20 @@ struct Run {
 
 fn main() {
     let cli = Cli::parse();
-    let runner = Runner::new();
+    let mut runner = Runner::new();
 
-    match &cli.run {
-        RunCommand::Run(id) => {
-            match id.id {
-                Some(v) => runner.run_game(v),
-                None => println!("No id was given, interactive selection will be here")
+    if cli.config {
+        runner.config_editor();
+        
+    } else {
+        match &cli.run.unwrap() {
+            RunCommand::Run(id) => {
+                match id.id {
+                    Some(v) => runner.run_game(v),
+                    None => runner.run_intr() 
+                }
             }
         }
     }
+
 }
