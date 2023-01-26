@@ -215,6 +215,10 @@ impl Runner {
 
 #[cfg(feature = "nixos")]
 fn runner_nixos(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String) {
+    use std::path::Path;
+
+    let game_dir = Path::new(&exect_path).parent().unwrap();
+    std::env::set_current_dir(&game_dir).is_ok();
     Command::new("steam-run")
         .envs(envs)
         .args([runner_path, exect_path])
