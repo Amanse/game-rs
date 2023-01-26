@@ -35,24 +35,13 @@ impl Runner {
         Runner { config: cfg }
     }
 
-    pub fn run_intr(self) {
-        let prompts: Vec<String> = self
-            .config
-            .games
-            .iter()
-            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
-            .collect();
-        let game = FuzzySelect::new()
-            .default(0)
-            .items(&prompts)
-            .interact_opt()
-            .unwrap()
-            .unwrap();
+    pub fn run_intr(&self) {
+        let id = self.game_selector();
 
-        self.run_game(game);
+        self.run_game(id);
     }
 
-    pub fn run_game(self, id: usize) {
+    pub fn run_game(&self, id: usize) {
         let prefix_path = self.config.games[id].prefix_path.clone();
         let runner_path = self.config.games[id].runner_path.clone();
         let exect_path = self.config.games[id].exect_path.clone();
@@ -115,7 +104,7 @@ impl Runner {
             .unwrap();
 
         let prefix_path: String = Input::new()
-            .with_prompt("Path to prefix(Default $HOME/.wine)")
+            .with_prompt("Path to prefix")
             .default("$HOME/.wine".to_string())
             .interact_text()
             .unwrap();
@@ -151,19 +140,7 @@ impl Runner {
     fn edit_game(&mut self) {}
 
     fn delete_game(&mut self) {
-        let prompts: Vec<String> = self
-            .config
-            .games
-            .iter()
-            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
-            .collect();
-
-        let id: usize = FuzzySelect::new()
-            .with_prompt("Which game to delete?")
-            .default(0)
-            .items(&prompts)
-            .interact_opt()
-            .unwrap().unwrap();
+        let id = self.game_selector();
 
         let game = self.config.games[id].clone();
 
@@ -185,6 +162,24 @@ impl Runner {
         } else {
             std::process::exit(1);
         }
+    }
+
+    fn game_selector(&self) -> usize {
+        let prompts: Vec<String> = self
+            .config
+            .games
+            .iter()
+            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
+            .collect();
+
+        let id: usize = FuzzySelect::new()
+            .with_prompt("Which game to delete?")
+            .default(0)
+            .items(&prompts)
+            .interact_opt()
+            .unwrap().unwrap();
+
+        id
     }
 }
 
