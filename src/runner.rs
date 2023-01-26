@@ -16,7 +16,8 @@ struct MainConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 struct ExtraConfig {
-    runner_path: String
+    runner_path: String,
+    prefix_dir: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -37,14 +38,14 @@ impl ::std::default::Default for MainConfig {
 
 impl ::std::default::Default for ExtraConfig {
     fn default() -> Self {
-        Self { runner_path: "".to_string() }
+        Self { runner_path: "".to_string(), prefix_dir: "".to_string() }
     }
 }
 
 impl Runner {
     pub fn new() -> Self {
         let cfg: MainConfig = confy::load("game-rs", None).unwrap();
-        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig { runner_path: "".to_string() });
+        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig { runner_path: "".to_string(), prefix_dir: "".to_string() });
         Runner { config: cfg, extra }
     }
 
@@ -87,7 +88,7 @@ impl Runner {
     pub fn config_editor(&mut self) {
         let mode = FuzzySelect::with_theme(&ColorfulTheme::default())
             .default(0)
-            .items(&vec!["Add game", "Edit game", "Delete game", "Set default runner path"])
+            .items(&vec!["Add game", "Edit game", "Delete game", "Set default runner path", "Add prefix directory"])
             .interact_opt()
             .unwrap()
             .unwrap();
@@ -99,8 +100,13 @@ impl Runner {
         } else if mode == 2 as usize {
             self.delete_game()
         } else if mode == 3 as usize {
-            let path: String = Input::new().with_prompt("Enter runner executable path: ").interact_text().unwrap();
-            confy::store("game-rs", "Extra", ExtraConfig{runner_path: path.clone()}).unwrap();
+            let path: String = Input::new().with_prompt("Enter runner executable path").interact_text().unwrap();
+            self.extra.runner_path = path;
+            confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
+        } else if mode == 4 {
+            let path: String = Input::new().with_prompt("Prefixes directory").interact_text().unwrap();
+            self.extra.prefix_dir = path;
+            confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
         } else {
             panic!("What the fuck");
         }
@@ -126,6 +132,7 @@ impl Runner {
         let prefix_path: String = Input::new()
             .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
             .default("".to_string())
+            .with_initial_text(self.extra.prefix_dir.clone())
             .show_default(false)
             .interact_text()
             .unwrap();
