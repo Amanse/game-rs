@@ -78,11 +78,8 @@ impl Runner {
             envs.insert("WINEPREFIX", prefix_path.as_str());
         }
 
-        #[cfg(not(feature = "nixos"))]
-        runner_default(&envs, runner_path, exect_path);
+        runner_main(&envs, runner_path, exect_path);
 
-        #[cfg(feature = "nixos")]
-        runner_nixos(&envs, runner_path, exect_path);
     }
 
     pub fn config_editor(&mut self) {
@@ -213,24 +210,24 @@ impl Runner {
     }
 }
 
-#[cfg(feature = "nixos")]
-fn runner_nixos(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String) {
+fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String) {
     use std::path::Path;
 
     let game_dir = Path::new(&exect_path).parent().unwrap();
-    std::env::set_current_dir(&game_dir).is_ok();
+    _ =std::env::set_current_dir(&game_dir).is_ok();
+
+    #[cfg(feature="nixos")]
     Command::new("steam-run")
         .envs(envs)
         .args([runner_path, exect_path])
         .spawn()
         .expect("Could not run game");
-}
 
-#[cfg(not(feature = "nixos"))]
-fn runner_default(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String) {
+    #[cfg(not(feature="nixos"))]
     Command::new(runner_path)
         .envs(envs)
         .args([exect_path])
         .spawn()
         .expect("Could not run game");
 }
+
