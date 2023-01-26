@@ -7,7 +7,9 @@ struct Cli {
     #[command(subcommand)]
     run: Option<RunCommand>,
     #[arg(short, long)]
-    config: bool
+    config: bool,
+    #[arg(short, long)]
+    verbose: bool
 }
 
 #[derive(Subcommand)]

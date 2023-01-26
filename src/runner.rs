@@ -153,7 +153,7 @@ fn runner_nixos(envs: &HashMap<&str, &str>, runner_path: String, exect_path: Str
     Command::new("steam-run")
         .envs(envs)
         .args([runner_path, exect_path])
-        .output()
+        .spawn()
         .expect("Could not run game");
 }
 
@@ -162,6 +162,6 @@ fn runner_default(envs: &HashMap<&str, &str>, runner_path: String, exect_path: S
     Command::new(runner_path)
         .envs(envs)
         .args([exect_path])
-        .output()
+        .spawn()
         .expect("Could not run game");
 }
