@@ -38,14 +38,20 @@ impl ::std::default::Default for MainConfig {
 
 impl ::std::default::Default for ExtraConfig {
     fn default() -> Self {
-        Self { runner_path: "".to_string(), prefix_dir: "".to_string() }
+        Self {
+            runner_path: "".to_string(),
+            prefix_dir: "".to_string(),
+        }
     }
 }
 
 impl Runner {
     pub fn new() -> Self {
         let cfg: MainConfig = confy::load("game-rs", None).unwrap();
-        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig { runner_path: "".to_string(), prefix_dir: "".to_string() });
+        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig {
+            runner_path: "".to_string(),
+            prefix_dir: "".to_string(),
+        });
         Runner { config: cfg, extra }
     }
 
@@ -79,13 +85,18 @@ impl Runner {
         }
 
         runner_main(&envs, runner_path, exect_path);
-
     }
 
     pub fn config_editor(&mut self) {
         let mode = FuzzySelect::with_theme(&ColorfulTheme::default())
             .default(0)
-            .items(&vec!["Add game", "Edit game", "Delete game", "Set default runner path", "Add prefix directory"])
+            .items(&vec![
+                "Add game",
+                "Edit game",
+                "Delete game",
+                "Set default runner path",
+                "Add prefix directory",
+            ])
             .interact_opt()
             .unwrap()
             .unwrap();
@@ -97,11 +108,17 @@ impl Runner {
         } else if mode == 2 as usize {
             self.delete_game()
         } else if mode == 3 as usize {
-            let path: String = Input::new().with_prompt("Enter runner executable path").interact_text().unwrap();
+            let path: String = Input::new()
+                .with_prompt("Enter runner executable path")
+                .interact_text()
+                .unwrap();
             self.extra.runner_path = path;
             confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
         } else if mode == 4 {
-            let path: String = Input::new().with_prompt("Prefixes directory").interact_text().unwrap();
+            let path: String = Input::new()
+                .with_prompt("Prefixes directory")
+                .interact_text()
+                .unwrap();
             self.extra.prefix_dir = path;
             confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
         } else {
@@ -162,7 +179,79 @@ impl Runner {
         confy::store("game-rs", None, self.config.clone()).unwrap();
     }
 
-    fn edit_game(&mut self) {}
+    fn edit_game(&mut self) {
+        let id = self.game_selector();
+
+        loop {
+            let edit_options = [
+                "Name",
+                "Executable path",
+                "Prefix path",
+                "Runner path",
+                "Exit",
+            ];
+
+            let selection: usize = FuzzySelect::new()
+                .items(&edit_options)
+                .default(0)
+                .interact_opt()
+                .unwrap()
+                .unwrap();
+
+            match selection {
+                0 => {
+                    let input: String = Input::new()
+                        .default(self.config.games[id].name.clone())
+                        .interact_text()
+                        .unwrap();
+
+                    self.config.games[id].name = input;
+                    confy::store("game-rs", None, self.config.clone()).unwrap();
+
+                    println!("{} Updated", self.config.games[id].name.clone());
+                }
+                1 => {
+                    let input: String = Input::new()
+                        .default(self.config.games[id].exect_path.clone())
+                        .interact_text()
+                        .unwrap();
+
+                    self.config.games[id].exect_path = input;
+                    confy::store("game-rs", None, self.config.clone()).unwrap();
+
+                    println!("{} Updated", self.config.games[id].name.clone());
+                }
+                2 => {
+                    let input: String = Input::new()
+                        .default(self.config.games[id].prefix_path.clone())
+                        .interact_text()
+                        .unwrap();
+
+                    self.config.games[id].prefix_path = input;
+                    confy::store("game-rs", None, self.config.clone()).unwrap();
+
+                    println!("{} Updated", self.config.games[id].name.clone());
+                }
+                3 => {
+                    let input: String = Input::new()
+                        .default(self.config.games[id].runner_path.clone())
+                        .interact_text()
+                        .unwrap();
+
+                    self.config.games[id].runner_path = input;
+                    confy::store("game-rs", None, self.config.clone()).unwrap();
+
+                    println!("{} Updated", self.config.games[id].name.clone());
+                }
+                4 => {
+                    break;
+                }
+                _ => {
+                    panic!("What the fuck");
+                }
+            }
+        }
+    }
 
     fn delete_game(&mut self) {
         let id = self.game_selector();
@@ -214,20 +303,20 @@ fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: Stri
     use std::path::Path;
 
     let game_dir = Path::new(&exect_path).parent().unwrap();
-    _ =std::env::set_current_dir(&game_dir).is_ok();
 
-    #[cfg(feature="nixos")]
+    #[cfg(feature = "nixos")]
     Command::new("steam-run")
+        .current_dir(game_dir)
         .envs(envs)
         .args([runner_path, exect_path])
         .spawn()
         .expect("Could not run game");
 
-    #[cfg(not(feature="nixos"))]
+    #[cfg(not(feature = "nixos"))]
     Command::new(runner_path)
+        .current_dir(game_dir)
         .envs(envs)
         .args([exect_path])
         .spawn()
         .expect("Could not run game");
 }
-
