@@ -1,6 +1,8 @@
 use clap::{Args, Parser, Subcommand};
+use download::download;
 use runner::Runner;
 mod runner;
+mod download;
 
 #[derive(Parser)]
 struct Cli {
@@ -35,7 +37,7 @@ fn main() {
             runner.config_editor();
         }
         Command::Proton => {
-            todo!()
+            download();
         }
     }
 }
