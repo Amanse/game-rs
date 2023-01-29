@@ -85,6 +85,7 @@ impl Runner {
         }
 
         runner_main(&envs, runner_path, exect_path);
+        println!("Running {}", self.config.games[id].name.clone());
     }
 
     pub fn config_editor(&mut self) {
