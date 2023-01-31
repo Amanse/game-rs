@@ -4,6 +4,8 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Command;
 
+use eyre::{eyre, Result};
+
 pub struct Runner {
     config: MainConfig,
     extra: ExtraConfig,
@@ -55,13 +57,13 @@ impl Runner {
         Runner { config: cfg, extra }
     }
 
-    pub fn run_intr(&self) {
-        let id = self.game_selector();
+    pub fn run_intr(&self) -> Result<()> {
+        let id = self.game_selector()?;
 
-        self.run_game(id);
+        Ok(self.run_game(id)?)
     }
 
-    pub fn run_game(&self, id: usize) {
+    pub fn run_game(&self, id: usize) -> Result<()> {
         let prefix_path = self.config.games[id].prefix_path.clone();
         let runner_path = self.config.games[id].runner_path.clone();
         let exect_path = self.config.games[id].exect_path.clone();
@@ -86,9 +88,10 @@ impl Runner {
 
         runner_main(&envs, runner_path, exect_path);
         println!("Running {}", self.config.games[id].name.clone());
+        Ok(())
     }
 
-    pub fn config_editor(&mut self) {
+    pub fn config_editor(&mut self) -> Result<()> {
         let mode = FuzzySelect::with_theme(&ColorfulTheme::default())
             .default(0)
             .items(&vec![
@@ -98,9 +101,8 @@ impl Runner {
                 "Set default runner path",
                 "Add prefix directory",
             ])
-            .interact_opt()
-            .unwrap()
-            .unwrap();
+            .interact_opt()?
+            .ok_or(eyre!("Nothing selected, goodbye"))?;
 
         if mode == 0 as usize {
             self.add_game()
@@ -111,52 +113,51 @@ impl Runner {
         } else if mode == 3 as usize {
             let path: String = Input::new()
                 .with_prompt("Enter runner executable path")
-                .interact_text()
-                .unwrap();
+                .default(self.extra.runner_path.clone())
+                .interact_text()?;
             self.extra.runner_path = path;
-            confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
+            confy::store("game-rs", "Extra", self.extra.clone())?;
+            Ok(())
         } else if mode == 4 {
             let path: String = Input::new()
                 .with_prompt("Prefixes directory")
-                .interact_text()
-                .unwrap();
+                .default(self.extra.prefix_dir.clone())
+                .interact_text()?;
             self.extra.prefix_dir = path;
-            confy::store("game-rs", "Extra", self.extra.clone()).unwrap();
+            confy::store("game-rs", "Extra", self.extra.clone())?;
+            Ok(())
         } else {
-            panic!("What the fuck");
+            return Err(eyre!(
+                "Achievement unlocked: How did we get here(invalid mode selected)"
+            ));
         }
     }
 
-    fn add_game(&mut self) {
+    fn add_game(&mut self) -> Result<()> {
         let name: String = Input::new()
             .with_prompt("Name of the game ")
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
 
         let exect_path: String = Input::new()
             .with_prompt("Path to executable")
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
 
         let runner_path: String = Input::new()
             .with_prompt("Path to proton/wine binary")
             .default(self.extra.runner_path.clone())
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
 
         let prefix_path: String = Input::new()
             .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
             .default("".to_string())
             .with_initial_text(self.extra.prefix_dir.clone())
             .show_default(false)
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
 
         let use_nvidia = Confirm::new()
             .with_prompt("Do you want to run this with nvidia gpu?")
-            .interact_opt()
-            .unwrap()
-            .unwrap();
+            .interact_opt()?
+            .ok_or(eyre!("Why not select anything bruh"))?;
 
         let id: usize = {
             if let Some(v) = self.config.games.last() {
@@ -177,11 +178,12 @@ impl Runner {
 
         self.config.games.push(new_game);
 
-        confy::store("game-rs", None, self.config.clone()).unwrap();
+        confy::store("game-rs", None, self.config.clone())?;
+        Ok(())
     }
 
-    fn edit_game(&mut self) {
-        let id = self.game_selector();
+    fn edit_game(&mut self) -> Result<()> {
+        let id = self.game_selector()?;
 
         loop {
             let edit_options = [
@@ -195,67 +197,61 @@ impl Runner {
             let selection: usize = FuzzySelect::new()
                 .items(&edit_options)
                 .default(0)
-                .interact_opt()
-                .unwrap()
-                .unwrap();
+                .interact_opt()?
+                .ok_or(eyre!("Nothing selected, goodbye"))?;
 
             match selection {
                 0 => {
                     let input: String = Input::new()
                         .default(self.config.games[id].name.clone())
-                        .interact_text()
-                        .unwrap();
+                        .interact_text()?;
 
                     self.config.games[id].name = input;
-                    confy::store("game-rs", None, self.config.clone()).unwrap();
+                    confy::store("game-rs", None, self.config.clone())?;
 
                     println!("{} Updated", self.config.games[id].name.clone());
                 }
                 1 => {
                     let input: String = Input::new()
                         .default(self.config.games[id].exect_path.clone())
-                        .interact_text()
-                        .unwrap();
+                        .interact_text()?;
 
                     self.config.games[id].exect_path = input;
-                    confy::store("game-rs", None, self.config.clone()).unwrap();
+                    confy::store("game-rs", None, self.config.clone())?;
 
                     println!("{} Updated", self.config.games[id].name.clone());
                 }
                 2 => {
                     let input: String = Input::new()
                         .default(self.config.games[id].prefix_path.clone())
-                        .interact_text()
-                        .unwrap();
+                        .interact_text()?;
 
                     self.config.games[id].prefix_path = input;
-                    confy::store("game-rs", None, self.config.clone()).unwrap();
+                    confy::store("game-rs", None, self.config.clone())?;
 
                     println!("{} Updated", self.config.games[id].name.clone());
                 }
                 3 => {
                     let input: String = Input::new()
                         .default(self.config.games[id].runner_path.clone())
-                        .interact_text()
-                        .unwrap();
+                        .interact_text()?;
 
                     self.config.games[id].runner_path = input;
-                    confy::store("game-rs", None, self.config.clone()).unwrap();
+                    confy::store("game-rs", None, self.config.clone())?;
 
                     println!("{} Updated", self.config.games[id].name.clone());
                 }
                 4 => {
                     break;
                 }
-                _ => {
-                    panic!("What the fuck");
-                }
+                _ => return Err(eyre!("Achievement unlocked: What the fuck")),
             }
         }
+        Ok(())
     }
 
-    fn delete_game(&mut self) {
-        let id = self.game_selector();
+    fn delete_game(&mut self) -> Result<()> {
+        let id = self.game_selector()?;
 
         let game = self.config.games[id].clone();
 
@@ -267,20 +263,20 @@ impl Runner {
                 "Are you sure you want to delete {} - {}",
                 game.id, game.name
             ))
-            .interact_opt()
-            .unwrap()
-            .unwrap();
+            .interact_opt()?
+            .ok_or(eyre!("NOthing selected, goodbye"))?;
 
         if confirmation {
             self.config.games.remove(id);
-            confy::store("game-rs", None, self.config.clone()).unwrap();
+            confy::store("game-rs", None, self.config.clone())?;
             println!("Deleted {}", game.name);
+            Ok(())
         } else {
             std::process::exit(1);
         }
     }
 
-    fn game_selector(&self) -> usize {
+    fn game_selector(&self) -> Result<usize> {
         let prompts: Vec<String> = self
             .config
             .games
@@ -292,11 +288,10 @@ impl Runner {
             .with_prompt("Select game")
             .default(0)
             .items(&prompts)
-            .interact_opt()
-            .unwrap()
-            .unwrap();
+            .interact_opt()?
+            .ok_or(eyre!("Nothing selected, goodbye"))?;
 
-        id
+        Ok(id)
     }
 }
 
