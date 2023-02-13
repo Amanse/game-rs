@@ -9,6 +9,7 @@ use eyre::{eyre, Result};
 pub struct Runner {
     config: MainConfig,
     extra: ExtraConfig,
+    is_verbose: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,13 +49,13 @@ impl ::std::default::Default for ExtraConfig {
 }
 
 impl Runner {
-    pub fn new() -> Self {
+    pub fn new(is_verbose: bool) -> Self {
         let cfg: MainConfig = confy::load("game-rs", None).unwrap();
         let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig {
             runner_path: "".to_string(),
             prefix_dir: "".to_string(),
         });
-        Runner { config: cfg, extra }
+        Runner { config: cfg, extra, is_verbose }
     }
 
     pub fn run_intr(&self) -> Result<()> {
@@ -86,8 +87,8 @@ impl Runner {
             envs.insert("WINEPREFIX", prefix_path.as_str());
         }
 
-        runner_main(&envs, runner_path, exect_path);
-        println!("Running {}", self.config.games[id].name.clone());
+        runner_main(&envs, runner_path, exect_path, self.is_verbose);
+        println!("Finished {}", self.config.games[id].name.clone());
         Ok(())
     }
 
@@ -295,24 +296,34 @@ impl Runner {
     }
 }
 
-fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String) {
+fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String, is_verbose: bool) {
     use std::path::Path;
 
     let game_dir = Path::new(&exect_path).parent().unwrap();
 
+    let stdout: std::process::Stdio = {
+        if !is_verbose {
+            std::process::Stdio::null()
+        } else {
+            std::process::Stdio::inherit()
+        }
+    };
+
     #[cfg(feature = "nixos")]
     Command::new("steam-run")
         .current_dir(game_dir)
+        .stdout(stdout)
         .envs(envs)
         .args([runner_path, exect_path])
-        .spawn()
+        .output()
         .expect("Could not run game");
 
     #[cfg(not(feature = "nixos"))]
     Command::new(runner_path)
         .current_dir(game_dir)
+        .stdout(stdout)
         .envs(envs)
         .args([exect_path])
-        .spawn()
+        .output()
         .expect("Could not run game");
 }

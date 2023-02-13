@@ -29,7 +29,7 @@ struct Run {
 
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
-    let mut runner = Runner::new();
+    let mut runner = Runner::new(cli.verbose);
 
     match &cli.command {
         Command::Run(id) => match id.id {
