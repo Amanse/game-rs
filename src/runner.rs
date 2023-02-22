@@ -31,6 +31,7 @@ struct Game {
     prefix_path: String,
     runner_path: String,
     exect_path: String,
+    is_native: Option<bool>,
 }
 
 impl ::std::default::Default for MainConfig {
@@ -55,7 +56,11 @@ impl Runner {
             runner_path: "".to_string(),
             prefix_dir: "".to_string(),
         });
-        Runner { config: cfg, extra, is_verbose }
+        Runner {
+            config: cfg,
+            extra,
+            is_verbose,
+        }
     }
 
     pub fn run_intr(&self) -> Result<()> {
@@ -143,17 +148,27 @@ impl Runner {
             .with_prompt("Path to executable")
             .interact_text()?;
 
-        let runner_path: String = Input::new()
-            .with_prompt("Path to proton/wine binary")
-            .default(self.extra.runner_path.clone())
-            .interact_text()?;
+        let is_native: bool = Confirm::new()
+            .with_prompt("Is it native linux game?")
+            .interact_opt()?
+            .ok_or(eyre!("select something next time"))?;
 
-        let prefix_path: String = Input::new()
-            .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
-            .default("".to_string())
-            .with_initial_text(self.extra.prefix_dir.clone())
-            .show_default(false)
-            .interact_text()?;
+        let mut runner_path: String = "".to_string();
+        let mut prefix_path: String = "".to_string();
+
+        if !is_native {
+            runner_path = Input::new()
+                .with_prompt("Path to proton/wine binary")
+                .default(self.extra.runner_path.clone())
+                .interact_text()?;
+
+            prefix_path = Input::new()
+                .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
+                .default("".to_string())
+                .with_initial_text(self.extra.prefix_dir.clone())
+                .show_default(false)
+                .interact_text()?;
+        }
 
         let use_nvidia = Confirm::new()
             .with_prompt("Do you want to run this with nvidia gpu?")
@@ -175,6 +190,7 @@ impl Runner {
             use_nvidia,
             exect_path,
             runner_path,
+            is_native: Some(is_native),
         };
 
         self.config.games.push(new_game);
@@ -296,7 +312,12 @@ impl Runner {
     }
 }
 
-fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: String, is_verbose: bool) {
+fn runner_main(
+    envs: &HashMap<&str, &str>,
+    runner_path: String,
+    exect_path: String,
+    is_verbose: bool,
+) {
     use std::path::Path;
 
     let game_dir = Path::new(&exect_path).parent().unwrap();
@@ -308,6 +329,14 @@ fn runner_main(envs: &HashMap<&str, &str>, runner_path: String, exect_path: Stri
             std::process::Stdio::inherit()
         }
     };
+
+    let mut runner_path: String = runner_path.clone();
+    let mut exect_path: String = exect_path.clone();
+
+    if runner_path == "".to_string() {
+        runner_path = exect_path;
+        exect_path = "".to_string();
+    }
 
     #[cfg(feature = "nixos")]
     Command::new("steam-run")
