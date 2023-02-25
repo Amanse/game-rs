@@ -2,6 +2,8 @@ use std::{fs::File, io::Write};
 
 use dialoguer::Input;
 use eyre::{eyre, Result};
+use tar::Archive;
+use flate2::read;
 
 pub fn download() -> Result<()> {
     let resp: serde_json::Value =
@@ -22,7 +24,8 @@ pub fn download() -> Result<()> {
         .show_default(false)
         .interact_text()?;
 
-    let mut file = File::create(format!("{}{}", input, name))?;
+    //let mut file = File::create(format!("{}{}", "/tmp/", name))?;
+    let mut file = File::open(format!("/tmp/{}", "wine-lutris-GE-Proton7-37-x86_64.tar.xz"))?;
     let resp = ureq::get(download_url).call()?;
     let len: usize = resp
         .header("Content-Length")
@@ -32,8 +35,14 @@ pub fn download() -> Result<()> {
     println!("Downloading, It may look stuck but it is working!");
 
     let mut bytes: Vec<u8> = Vec::with_capacity(len);
-    resp.into_reader().read_to_end(&mut bytes)?;
+    //resp.into_reader().read_to_end(&mut bytes)?;
 
-    file.write(bytes.as_slice())?;
+    //file.write(bytes.as_slice())?;
+
+    let decomp = read::ZlibDecoder::new(file);
+
+    let mut a = Archive::new(decomp);
+
+    a.unpack("gamedata").unwrap();
     Ok(())
 }
