@@ -6,6 +6,7 @@ use eyre::Result;
 
 mod download;
 mod runner;
+mod import;
 
 #[derive(Parser)]
 struct Cli {
@@ -20,6 +21,7 @@ enum Command {
     Run(Run),
     Config,
     Proton,
+    Import
 }
 
 #[derive(Args)]
@@ -38,5 +40,6 @@ fn main() -> Result<(), eyre::Report> {
         },
         Command::Config => Ok(runner.config_editor()?),
         Command::Proton => Ok(download()?),
+        Command::Import => Ok(import::import_from_lutris()?)
     }
 }
