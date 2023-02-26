@@ -2,6 +2,8 @@ use std::{fs::File, io::Write};
 
 use dialoguer::Input;
 use eyre::{eyre, Result};
+use tar::Archive;
+use xz::read;
 
 pub fn download() -> Result<()> {
     let resp: serde_json::Value =
@@ -22,7 +24,7 @@ pub fn download() -> Result<()> {
         .show_default(false)
         .interact_text()?;
 
-    let mut file = File::create(format!("{}{}", input, name))?;
+    let mut file = File::create(format!("{}{}", "/tmp/", name))?;
     let resp = ureq::get(download_url).call()?;
     let len: usize = resp
         .header("Content-Length")
@@ -35,5 +37,14 @@ pub fn download() -> Result<()> {
     resp.into_reader().read_to_end(&mut bytes)?;
 
     file.write(bytes.as_slice())?;
+    let mut file = File::open(format!("/tmp/{}", name)).unwrap();
+    println!("Extracting");
+
+    let decomp = read::XzDecoder::new(file);
+
+    let mut a = Archive::new(decomp);
+
+    a.unpack(input).unwrap();
+
     Ok(())
 }
