@@ -51,11 +51,8 @@ impl ::std::default::Default for ExtraConfig {
 
 impl Runner {
     pub fn new(is_verbose: bool) -> Self {
-        let cfg: MainConfig = confy::load("game-rs", None).unwrap();
-        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig {
-            runner_path: "".to_string(),
-            prefix_dir: "".to_string(),
-        });
+        let cfg: MainConfig = confy::load("game-rs", None).unwrap_or(MainConfig::default());
+        let extra: ExtraConfig = confy::load("game-rs", "Extra").unwrap_or(ExtraConfig::default());
         Runner {
             config: cfg,
             extra,
