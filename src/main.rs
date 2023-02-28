@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use config::MainConfig;
 use download::download;
 use runner::Runner;
 
@@ -7,6 +8,7 @@ use eyre::Result;
 mod download;
 mod runner;
 mod import;
+mod config;
 
 #[derive(Parser)]
 struct Cli {
@@ -31,14 +33,15 @@ struct Run {
 
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
-    let mut runner = Runner::new(cli.verbose);
+    let mut config = MainConfig::new()?;
+    let runner = Runner::new(&config, cli.verbose)?;
 
     match &cli.command {
         Command::Run(id) => match id.id {
             Some(v) => Ok(runner.run_game(v)?),
             None => Ok(runner.run_intr()?),
         },
-        Command::Config => Ok(runner.config_editor()?),
+        Command::Config => Ok(config.config_editor()?),
         Command::Proton => Ok(download()?),
         Command::Import => Ok(import::import_from_lutris()?)
     }
