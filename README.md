@@ -2,7 +2,7 @@
 
 ## Install
 `cargo install --path .` or for nixos `cargo install --features nixos --path .`
-or use [AUR](https://aur.archlinux.org/packages/game-rs) (Thankyou proledatarian. very cool)
+or use [AUR](https://aur.archlinux.org/packages/game-rs-bin) (Thankyou proledatarian. very cool)
 
 ## Usage
 `game-rs config` to go into interactive config mode where you can add, edit or delete the games in config <br />
