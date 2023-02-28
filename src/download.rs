@@ -37,7 +37,7 @@ pub fn download() -> Result<()> {
     resp.into_reader().read_to_end(&mut bytes)?;
 
     file.write(bytes.as_slice())?;
-    let mut file = File::open(format!("/tmp/{}", name)).unwrap();
+    let file = File::open(format!("/tmp/{}", name)).unwrap();
     println!("Extracting");
 
     let decomp = read::XzDecoder::new(file);
