@@ -1,6 +1,6 @@
-use serde_derive::{Deserialize, Serialize};
-use dialoguer::{Input, FuzzySelect, Confirm, theme::ColorfulTheme};
+use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input, Select};
 use eyre::{eyre, Result};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MainConfig {
@@ -15,8 +15,9 @@ pub struct GameList {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ExtraConfig {
-    pub runner_path: String,
-    pub prefix_dir: String,
+    pub runner_path: Option<String>,
+    pub prefix_dir: Option<String>,
+    pub runner_dirs: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,21 +49,31 @@ impl ::std::default::Default for GameList {
 impl ::std::default::Default for ExtraConfig {
     fn default() -> Self {
         Self {
-            runner_path: "".to_string(),
-            prefix_dir: "".to_string(),
+            runner_path: None,
+            prefix_dir: None,
+            runner_dirs: None,
         }
     }
 }
 
 impl MainConfig {
-    pub fn new() -> Result<Self>{
+    pub fn new() -> Result<Self> {
         let games: GameList = confy::load("game-rs", None).unwrap_or(GameList::default());
         let extra = ExtraConfig::new()?;
-        Ok(Self{games: games.games, extra})
+        Ok(Self {
+            games: games.games,
+            extra,
+        })
     }
 
     pub fn save_games(&self) -> Result<()> {
-        confy::store("game-rs", None, GameList{games: self.games.clone()})?;
+        confy::store(
+            "game-rs",
+            None,
+            GameList {
+                games: self.games.clone(),
+            },
+        )?;
         Ok(())
     }
 
@@ -75,6 +86,7 @@ impl MainConfig {
                 "Delete game",
                 "Set default runner path",
                 "Add prefix directory",
+                "Add Runner directory",
             ])
             .interact_opt()?
             .ok_or(eyre!("Nothing selected, goodbye"))?;
@@ -88,17 +100,27 @@ impl MainConfig {
         } else if mode == 3 as usize {
             let path: String = Input::new()
                 .with_prompt("Enter runner executable path")
-                .default(self.extra.runner_path.clone())
+                .default(self.extra.runner_path.clone().unwrap_or("".to_string()))
                 .interact_text()?;
-            self.extra.runner_path = path;
+            self.extra.runner_path = Some(path);
             confy::store("game-rs", "Extra", self.extra.clone())?;
             Ok(())
         } else if mode == 4 {
             let path: String = Input::new()
                 .with_prompt("Prefixes directory")
-                .default(self.extra.prefix_dir.clone())
+                .default(self.extra.prefix_dir.clone().unwrap_or("".to_string()))
                 .interact_text()?;
-            self.extra.prefix_dir = path;
+            self.extra.prefix_dir = Some(path);
+            confy::store("game-rs", "Extra", self.extra.clone())?;
+            Ok(())
+        } else if mode == 5 {
+            let mut dirs = self.extra.runner_dirs.clone().unwrap_or(vec![]);
+            let path: String = Input::new()
+                .with_prompt("Another Runner directory")
+                .interact_text()?;
+            dirs.push(path);
+
+            self.extra.runner_dirs = Some(dirs);
             confy::store("game-rs", "Extra", self.extra.clone())?;
             Ok(())
         } else {
@@ -126,15 +148,12 @@ impl MainConfig {
         let mut prefix_path: String = "".to_string();
 
         if !is_native {
-            runner_path = Input::new()
-                .with_prompt("Path to proton/wine binary")
-                .default(self.extra.runner_path.clone())
-                .interact_text()?;
+            runner_path = self.runner_selector()?;
 
             prefix_path = Input::new()
                 .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
                 .default("".to_string())
-                .with_initial_text(self.extra.prefix_dir.clone())
+                .with_initial_text(self.extra.prefix_dir.clone().unwrap_or("".to_string()))
                 .show_default(false)
                 .interact_text()?;
         }
@@ -218,11 +237,9 @@ impl MainConfig {
                     println!("{} Updated", self.games[id].name.clone());
                 }
                 3 => {
-                    let input: String = Input::new()
-                        .default(self.games[id].runner_path.clone())
-                        .interact_text()?;
+                    let path = self.runner_selector()?;
 
-                    self.games[id].runner_path = input;
+                    self.games[id].runner_path = path;
                     self.save_games()?;
 
                     println!("{} Updated", self.games[id].name.clone());
@@ -269,7 +286,7 @@ impl MainConfig {
             .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
             .collect();
 
-        let id: usize = FuzzySelect::new()
+        let id: usize = FuzzySelect::with_theme(&ColorfulTheme::default())
             .with_prompt("Select game")
             .default(0)
             .items(&prompts)
@@ -278,10 +295,69 @@ impl MainConfig {
 
         Ok(id)
     }
+
+    fn runner_selector(&self) -> Result<String> {
+        #[warn(unused_assignments)]
+        let runner_path: String;
+        let runner_list = self.extra.get_runners()?;
+        let runner_s = Select::new()
+            .with_prompt(
+                "Wine Runner [You can add runner dir to automatically fetch these in config]",
+            )
+            .default(0)
+            .item("Custom path")
+            .items(&runner_list)
+            .interact()?;
+
+        if runner_s != 0 {
+            runner_path = runner_list[runner_s - 1].clone();
+        } else {
+            runner_path = Input::new()
+                .with_prompt("Path to proton/wine binary")
+                .default(self.extra.runner_path.clone().unwrap_or("".to_string()))
+                .interact_text()?;
+        }
+        Ok(runner_path)
+    }
 }
 
 impl ExtraConfig {
-    pub fn new() -> Result<Self>{
+    pub fn new() -> Result<Self> {
         Ok(confy::load("game-rs", "Extra").unwrap_or(ExtraConfig::default()))
+    }
+
+    pub fn get_runners(&self) -> Result<Vec<String>> {
+        let mut runners = vec![];
+        let base_path = format!("{}/lutris/runners/wine", std::env::var("XDG_DATA_HOME")?);
+        if std::path::Path::new(&base_path).exists() {
+            Self::get_runners_for(base_path, &mut runners)?;
+        }
+        if let Some(dir) = self.runner_dirs.clone() {
+            for p in dir {
+                Self::get_runners_for(p, &mut runners)?;
+            }
+        }
+        Ok(runners)
+    }
+
+    fn get_runners_for(base_path: String, runners: &mut Vec<String>) -> Result<&mut Vec<String>> {
+        match std::fs::read_dir(base_path.clone()) {
+            Ok(paths) => {
+                for path in paths {
+                    let p = path?.path().clone();
+                    if let Some(dir) = p.iter().last().clone() {
+                        if p.join("bin").exists() {
+                            runners.push(format!(
+                                "{}/{}/bin/wine",
+                                base_path.clone().to_string(),
+                                dir.to_str().unwrap()
+                            ));
+                        }
+                    }
+                }
+            }
+            Err(_) => {}
+        };
+        Ok(runners)
     }
 }
