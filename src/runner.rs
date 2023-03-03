@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::process::Command;
 
-use eyre::Result;
 use crate::config::MainConfig;
+use eyre::Result;
 
 pub struct Runner<'a> {
     config: &'a MainConfig,
@@ -10,11 +10,8 @@ pub struct Runner<'a> {
 }
 
 impl<'a> Runner<'a> {
-    pub fn new(config: &'a MainConfig, is_verbose: bool) -> Result<Self>{
-        Ok(Runner {
-            config,
-            is_verbose,
-        })
+    pub fn new(config: &'a MainConfig, is_verbose: bool) -> Result<Self> {
+        Ok(Runner { config, is_verbose })
     }
 
     pub fn run_intr(&self) -> Result<()> {
@@ -43,8 +40,11 @@ impl<'a> Runner<'a> {
             envs.insert("WINEPREFIX", game.prefix_path.as_str());
         }
 
+        let start = std::time::Instant::now();
         runner_main(&envs, game.runner_path, game.exect_path, self.is_verbose);
-        println!("Finished {}", self.config.games[id].name.clone());
+        let played = start.elapsed().as_secs();
+        println!("Played {} for {} minutes", game.name.clone(), played / 60);
+        self.config.add_playtime(id, played)?;
         Ok(())
     }
 }

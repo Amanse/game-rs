@@ -29,6 +29,12 @@ pub struct Game {
     pub runner_path: String,
     pub exect_path: String,
     pub is_native: Option<bool>,
+    #[serde(default = "default_playtime")]
+    pub playtime: u64,
+}
+
+fn default_playtime() -> u64 {
+    0
 }
 
 impl ::std::default::Default for MainConfig {
@@ -75,6 +81,13 @@ impl MainConfig {
             },
         )?;
         Ok(())
+    }
+
+    //@TODO: Move functions to Game struct impl
+    pub fn add_playtime(&self, id: usize, to_add: u64) -> Result<()> {
+        let mut new = self.clone();
+        new.games[id].playtime += to_add;
+        new.save_games()
     }
 
     pub fn config_editor(&mut self) -> Result<()> {
@@ -179,6 +192,7 @@ impl MainConfig {
             exect_path,
             runner_path,
             is_native: Some(is_native),
+            playtime: 0,
         };
 
         self.games.push(new_game);
@@ -283,7 +297,14 @@ impl MainConfig {
         let prompts: Vec<String> = self
             .games
             .iter()
-            .map(|g| format!("{} - {}", g.id.clone(), g.name.clone()))
+            .map(|g| {
+                format!(
+                    "{} - {} ({}m)",
+                    g.id.clone(),
+                    g.name.clone(),
+                    g.playtime.clone() / 60
+                )
+            })
             .collect();
 
         let id: usize = FuzzySelect::with_theme(&ColorfulTheme::default())
