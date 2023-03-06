@@ -111,10 +111,7 @@ impl MainConfig {
         } else if mode == 2 as usize {
             self.delete_game()
         } else if mode == 3 as usize {
-            let path: String = Input::new()
-                .with_prompt("Enter runner executable path")
-                .default(self.extra.runner_path.clone().unwrap_or("".to_string()))
-                .interact_text()?;
+            let path: String = self.runner_selector()?;
             self.extra.runner_path = Some(path);
             confy::store("game-rs", "Extra", self.extra.clone())?;
             Ok(())
@@ -318,7 +315,6 @@ impl MainConfig {
     }
 
     fn runner_selector(&self) -> Result<String> {
-        #[warn(unused_assignments)]
         let runner_path: String;
         let runner_list = self.extra.get_runners()?;
         let runner_s = Select::new()
