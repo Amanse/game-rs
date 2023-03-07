@@ -1,5 +1,7 @@
 # A minimal (cli) Game launcher for linux written in rust
 
+[![Rust](https://github.com/Amanse/game-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/Amanse/game-rs/actions/workflows/rust.yml)
+
 ## Install
 `cargo install --path .` or for nixos `cargo install --features nixos --path .`
 or use [AUR](https://aur.archlinux.org/packages/game-rs-bin) (Thankyou proledatarian. very cool)
@@ -12,4 +14,4 @@ or use [AUR](https://aur.archlinux.org/packages/game-rs-bin) (Thankyou proledata
 
 unplanned but maybe once it is complete
 - GUI app with tauri or soemthing else
-- playtime counting 
+
