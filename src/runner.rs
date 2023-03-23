@@ -41,7 +41,7 @@ impl<'a> Runner<'a> {
         }
 
         let start = std::time::Instant::now();
-        runner_main(&envs, game.runner_path, game.exect_path, self.is_verbose);
+        runner_main(&envs, game.runner_path, game.exect_path, game.startup_cmd, self.is_verbose);
         let played = start.elapsed().as_secs();
         println!("Played {} for {} minutes", game.name.clone(), played / 60);
         self.config.add_playtime(id, played)?;
@@ -53,6 +53,7 @@ fn runner_main(
     envs: &HashMap<&str, &str>,
     runner_path: String,
     exect_path: String,
+    startup_cmd: String,
     is_verbose: bool,
 ) {
     use std::path::Path;
@@ -69,27 +70,33 @@ fn runner_main(
 
     let mut runner_path: String = runner_path.clone();
     let mut exect_path: String = exect_path.clone();
+    let mut startup: String = startup_cmd.clone();
 
     if runner_path == "".to_string() {
         runner_path = exect_path;
         exect_path = "".to_string();
     }
 
+    if startup == "".to_string() {
+        startup = runner_path.clone();
+        runner_path = "".to_string();
+    } 
+
     #[cfg(feature = "nixos")]
     Command::new("steam-run")
         .current_dir(game_dir)
         .stdout(stdout)
         .envs(envs)
-        .args([runner_path, exect_path])
+        .args([startup, runner_path, exect_path])
         .output()
         .expect("Could not run game");
 
     #[cfg(not(feature = "nixos"))]
-    Command::new(runner_path)
+    Command::new(startup)
         .current_dir(game_dir)
         .stdout(stdout)
         .envs(envs)
-        .args([exect_path])
+        .args([runner_path, exect_path])
         .output()
         .expect("Could not run game");
 }
