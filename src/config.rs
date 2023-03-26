@@ -31,16 +31,10 @@ pub struct Game {
     pub is_native: Option<bool>,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
-    #[serde(default = "default_empty")]
-    pub startup_cmd: String,
 }
 
 fn default_playtime() -> u64 {
     0
-}
-
-fn default_empty() -> String {
-    "".to_string()
 }
 
 impl ::std::default::Default for MainConfig {
@@ -196,7 +190,6 @@ impl MainConfig {
             runner_path,
             is_native: Some(is_native),
             playtime: 0,
-            startup_cmd: "".to_string()
         };
 
         self.games.push(new_game);
@@ -214,7 +207,6 @@ impl MainConfig {
                 "Executable path",
                 "Prefix path",
                 "Runner path",
-                "Startup Command",
                 "Exit",
             ];
 
@@ -264,15 +256,6 @@ impl MainConfig {
                     println!("{} Updated", self.games[id].name.clone());
                 }
                 4 => {
-                    let startup = Input::new()
-                        .with_prompt("Startup command")
-                        .default(self.games[id].startup_cmd.clone())
-                        .interact_text()?;
-
-                    self.games[id].startup_cmd = startup;
-                    self.save_games()?;
-                }
-                5 => {
                     break;
                 }
                 _ => return Err(eyre!("Achievement unlocked: What the fuck")),
