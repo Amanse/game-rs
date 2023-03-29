@@ -1,6 +1,23 @@
 use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input, Select};
 use eyre::{eyre, Result};
+use serde_aux::serde_introspection;
 use serde_derive::{Deserialize, Serialize};
+use std::any::TypeId;
+
+#[derive(Debug, PartialEq, Eq)]
+struct ParseBoolError;
+
+//impl std::str::FromStr for Option<bool> {
+//    type Err = ParseBoolError;
+//
+//    fn from_str(s: &str) -> Result<Self, Self::Err> {
+//        match s {
+//            "" => Ok(None),
+//            "true" => Ok(Some(true)),
+//            "false" => Ok(Some(false))
+//        }
+//    }
+//}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MainConfig {
@@ -20,7 +37,7 @@ pub struct ExtraConfig {
     pub runner_dirs: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update)]
 pub struct Game {
     pub id: usize,
     pub name: String,
@@ -28,13 +45,19 @@ pub struct Game {
     pub prefix_path: String,
     pub runner_path: String,
     pub exect_path: String,
-    pub is_native: Option<bool>,
+    #[serde(default = "default_old_native")]
+    pub is_native: bool,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
 }
 
 fn default_playtime() -> u64 {
     0
+}
+
+//Set to false as before this option was added there was no support for native games
+fn default_old_native() -> bool {
+    false
 }
 
 impl ::std::default::Default for MainConfig {
@@ -188,7 +211,7 @@ impl MainConfig {
             use_nvidia,
             exect_path,
             runner_path,
-            is_native: Some(is_native),
+            is_native,
             playtime: 0,
         };
 
@@ -200,67 +223,56 @@ impl MainConfig {
 
     fn edit_game(&mut self) -> Result<()> {
         let id = self.game_selector()?;
+        let mut game = self.games[id].clone();
+        let fields = serde_introspection::serde_introspect::<Game>();
 
         loop {
-            let edit_options = [
-                "Name",
-                "Executable path",
-                "Prefix path",
-                "Runner path",
-                "Exit",
-            ];
-
-            let selection: usize = FuzzySelect::new()
-                .items(&edit_options)
+            let selection = Select::new()
+                .items(&fields)
+                .item("Save")
                 .default(0)
                 .interact_opt()?
-                .ok_or(eyre!("Nothing selected, goodbye"))?;
+                .unwrap();
 
-            match selection {
-                0 => {
-                    let input: String = Input::new()
-                        .default(self.games[id].name.clone())
-                        .interact_text()?;
-
-                    self.games[id].name = input;
-                    confy::store("game-rs", None, self.clone())?;
-
-                    println!("{} Updated", self.games[id].name.clone());
-                }
-                1 => {
-                    let input: String = Input::new()
-                        .default(self.games[id].exect_path.clone())
-                        .interact_text()?;
-
-                    self.games[id].exect_path = input;
-                    confy::store("game-rs", None, self.clone())?;
-
-                    println!("{} Updated", self.games[id].name.clone());
-                }
-                2 => {
-                    let input: String = Input::new()
-                        .default(self.games[id].prefix_path.clone())
-                        .interact_text()?;
-
-                    self.games[id].prefix_path = input;
-                    confy::store("game-rs", None, self.clone())?;
-
-                    println!("{} Updated", self.games[id].name.clone());
-                }
-                3 => {
-                    let path = self.runner_selector()?;
-
-                    self.games[id].runner_path = path;
-                    self.save_games()?;
-
-                    println!("{} Updated", self.games[id].name.clone());
-                }
-                4 => {
-                    break;
-                }
-                _ => return Err(eyre!("Achievement unlocked: What the fuck")),
+            if selection == fields.len() {
+                break;
             }
+
+            if fields[selection] == "runner_path" {
+                let new_val = self.runner_selector()?;
+                game.runner_path = new_val;
+                continue;
+            }
+
+            let new_val: String = {
+                match game.get(fields[selection]) {
+                    Ok(v) => {
+                        if v == TypeId::of::<bool>() {
+                            let c = dialoguer::Confirm::new()
+                                .with_prompt(fields[selection].clone())
+                                .interact()
+                                .unwrap();
+                            if c {
+                                "true".to_string()
+                            } else {
+                                "false".to_string()
+                            }
+                        } else {
+                            dialoguer::Input::new()
+                                .with_prompt(fields[selection].clone())
+                                .interact_text()
+                                .unwrap()
+                        }
+                    }
+                    Err(_) => panic!("bitch"),
+                }
+            };
+        
+            game = game.clone().update(fields[selection], new_val.as_str())?;
         }
+        self.games[id] = game;
+        self.save_games()?;
+        
         Ok(())
     }
 
