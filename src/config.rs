@@ -1,4 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input, Select};
+use enum_iterator::{all, Sequence};
 use eyre::{eyre, Result};
 use serde_aux::serde_introspection;
 use serde_derive::{Deserialize, Serialize};
@@ -6,18 +7,6 @@ use std::any::TypeId;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ParseBoolError;
-
-//impl std::str::FromStr for Option<bool> {
-//    type Err = ParseBoolError;
-//
-//    fn from_str(s: &str) -> Result<Self, Self::Err> {
-//        match s {
-//            "" => Ok(None),
-//            "true" => Ok(Some(true)),
-//            "false" => Ok(Some(false))
-//        }
-//    }
-//}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MainConfig {
@@ -49,6 +38,27 @@ pub struct Game {
     pub is_native: bool,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
+}
+
+#[derive(Debug, PartialEq, Sequence)]
+enum ConfigMenu {
+    AddGame,
+    EditGame,
+    DeleteGame,
+    PrefixDir,
+    RunnerDir,
+}
+
+impl std::fmt::Display for ConfigMenu {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ConfigMenu::AddGame => write!(f, "Add game"),
+            ConfigMenu::EditGame => write!(f, "Edit game"),
+            ConfigMenu::DeleteGame => write!(f, "Delete game"),
+            ConfigMenu::PrefixDir => write!(f, "Add prefix directory"),
+            ConfigMenu::RunnerDir => write!(f, "Add runners directory"),
+        }
+    }
 }
 
 fn default_playtime() -> u64 {
@@ -114,52 +124,37 @@ impl MainConfig {
     }
 
     pub fn config_editor(&mut self) -> Result<()> {
-        let mode = FuzzySelect::with_theme(&ColorfulTheme::default())
+        let menu_modes = all::<ConfigMenu>().collect::<Vec<_>>();
+        let select_mode = FuzzySelect::with_theme(&ColorfulTheme::default())
             .default(0)
-            .items(&vec![
-                "Add game",
-                "Edit game",
-                "Delete game",
-                "Set default runner path",
-                "Add prefix directory",
-                "Add Runner directory",
-            ])
+            .items(&menu_modes)
             .interact_opt()?
             .ok_or(eyre!("Nothing selected, goodbye"))?;
 
-        if mode == 0 as usize {
-            self.add_game()
-        } else if mode == 1 as usize {
-            self.edit_game()
-        } else if mode == 2 as usize {
-            self.delete_game()
-        } else if mode == 3 as usize {
-            let path: String = self.runner_selector()?;
-            self.extra.runner_path = Some(path);
-            confy::store("game-rs", "Extra", self.extra.clone())?;
-            Ok(())
-        } else if mode == 4 {
-            let path: String = Input::new()
-                .with_prompt("Prefixes directory")
-                .default(self.extra.prefix_dir.clone().unwrap_or("".to_string()))
-                .interact_text()?;
-            self.extra.prefix_dir = Some(path);
-            confy::store("game-rs", "Extra", self.extra.clone())?;
-            Ok(())
-        } else if mode == 5 {
-            let mut dirs = self.extra.runner_dirs.clone().unwrap_or(vec![]);
-            let path: String = Input::new()
-                .with_prompt("Another Runner directory")
-                .interact_text()?;
-            dirs.push(path);
+        match menu_modes[select_mode] {
+            ConfigMenu::AddGame => self.add_game(),
+            ConfigMenu::EditGame => self.edit_game(),
+            ConfigMenu::DeleteGame => self.delete_game(),
+            ConfigMenu::PrefixDir => {
+                let path: String = Input::new()
+                    .with_prompt("Prefixes directory")
+                    .default(self.extra.prefix_dir.clone().unwrap_or("".to_string()))
+                    .interact_text()?;
+                self.extra.prefix_dir = Some(path);
+                confy::store("game-rs", "Extra", self.extra.clone())?;
+                return Ok(());
+            }
+            ConfigMenu::RunnerDir => {
+                let mut dirs = self.extra.runner_dirs.clone().unwrap_or(vec![]);
+                let path: String = Input::new()
+                    .with_prompt("Another Runner directory")
+                    .interact_text()?;
+                dirs.push(path);
 
-            self.extra.runner_dirs = Some(dirs);
-            confy::store("game-rs", "Extra", self.extra.clone())?;
-            Ok(())
-        } else {
-            return Err(eyre!(
-                "Achievement unlocked: How did we get here(invalid mode selected)"
-            ));
+                self.extra.runner_dirs = Some(dirs);
+                confy::store("game-rs", "Extra", self.extra.clone())?;
+                return Ok(());
+            }
         }
     }
 
@@ -267,12 +262,12 @@ impl MainConfig {
                     Err(_) => panic!("bitch"),
                 }
             };
-        
+
             game = game.clone().update(fields[selection], new_val.as_str())?;
         }
         self.games[id] = game;
         self.save_games()?;
-        
+
         Ok(())
     }
 
