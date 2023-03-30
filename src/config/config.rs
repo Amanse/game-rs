@@ -1,3 +1,4 @@
+use crate::config::extra_config::ExtraConfig;
 use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input, Select};
 use enum_iterator::{all, Sequence};
 use eyre::{eyre, Result};
@@ -17,13 +18,6 @@ pub struct MainConfig {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GameList {
     pub games: Vec<Game>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ExtraConfig {
-    pub runner_path: Option<String>,
-    pub prefix_dir: Option<String>,
-    pub runner_dirs: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update)]
@@ -82,16 +76,6 @@ impl ::std::default::Default for MainConfig {
 impl ::std::default::Default for GameList {
     fn default() -> Self {
         Self { games: vec![] }
-    }
-}
-
-impl ::std::default::Default for ExtraConfig {
-    fn default() -> Self {
-        Self {
-            runner_path: None,
-            prefix_dir: None,
-            runner_dirs: None,
-        }
     }
 }
 
@@ -176,7 +160,7 @@ impl MainConfig {
         let mut prefix_path: String = "".to_string();
 
         if !is_native {
-            runner_path = self.runner_selector()?;
+            runner_path = self.extra.runner_selector()?;
 
             prefix_path = Input::new()
                 .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
@@ -234,7 +218,7 @@ impl MainConfig {
             }
 
             if fields[selection] == "runner_path" {
-                let new_val = self.runner_selector()?;
+                let new_val = self.extra.runner_selector()?;
                 game.runner_path = new_val;
                 continue;
             }
@@ -319,69 +303,5 @@ impl MainConfig {
             .ok_or(eyre!("Nothing selected, goodbye"))?;
 
         Ok(id)
-    }
-
-    fn runner_selector(&self) -> Result<String> {
-        let runner_path: String;
-        let runner_list = self.extra.get_runners()?;
-        let runner_s = Select::new()
-            .with_prompt(
-                "Wine Runner [You can add runner dir to automatically fetch these in config]",
-            )
-            .default(0)
-            .item("Custom path")
-            .items(&runner_list)
-            .interact()?;
-
-        if runner_s != 0 {
-            runner_path = runner_list[runner_s - 1].clone();
-        } else {
-            runner_path = Input::new()
-                .with_prompt("Path to proton/wine binary")
-                .default(self.extra.runner_path.clone().unwrap_or("".to_string()))
-                .interact_text()?;
-        }
-        Ok(runner_path)
-    }
-}
-
-impl ExtraConfig {
-    pub fn new() -> Result<Self> {
-        Ok(confy::load("game-rs", "Extra").unwrap_or(ExtraConfig::default()))
-    }
-
-    pub fn get_runners(&self) -> Result<Vec<String>> {
-        let mut runners = vec![];
-        let base_path = format!("{}/lutris/runners/wine", std::env::var("XDG_DATA_HOME")?);
-        if std::path::Path::new(&base_path).exists() {
-            Self::get_runners_for(base_path, &mut runners)?;
-        }
-        if let Some(dir) = self.runner_dirs.clone() {
-            for p in dir {
-                Self::get_runners_for(p, &mut runners)?;
-            }
-        }
-        Ok(runners)
-    }
-
-    fn get_runners_for(base_path: String, runners: &mut Vec<String>) -> Result<&mut Vec<String>> {
-        match std::fs::read_dir(base_path.clone()) {
-            Ok(paths) => {
-                for path in paths {
-                    let p = path?.path().clone();
-                    if let Some(dir) = p.iter().last().clone() {
-                        if p.join("bin").exists() {
-                            runners.push(format!(
-                                "{}/{}/bin/wine",
-                                base_path.clone().to_string(),
-                                dir.to_str().unwrap()
-                            ));
-                        }
-                    }
-                }
-            }
-            Err(_) => {}
-        };
-        Ok(runners)
     }
 }

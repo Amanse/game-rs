@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::process::Command;
 
-use crate::config::MainConfig;
+use crate::config::config::MainConfig;
 use eyre::Result;
 
 pub struct Runner<'a> {

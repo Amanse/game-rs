@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use config::MainConfig;
+use config::config::MainConfig;
 use download::download;
 use runner::Runner;
 
