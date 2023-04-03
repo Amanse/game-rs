@@ -28,6 +28,8 @@ impl<'a> Runner<'a> {
     pub fn run_game(&self, id: usize) -> Result<()> {
         let game = self.config.games[id].clone();
 
+        println!("Running {}", game.name);
+
         let mut envs: HashMap<&str, &str> = {
             if game.use_nvidia {
                 HashMap::from([
