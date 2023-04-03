@@ -20,6 +20,11 @@ impl<'a> Runner<'a> {
         Ok(self.run_game(id)?)
     }
 
+    pub fn run_id(&self, id: usize) -> Result<()> {
+        let idx = self.config.games.iter().position(|a| a.id == id).unwrap();
+        Ok(self.run_game(idx)?)
+    }
+
     pub fn run_game(&self, id: usize) -> Result<()> {
         let game = self.config.games[id].clone();
 

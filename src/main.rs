@@ -38,7 +38,7 @@ fn main() -> Result<(), eyre::Report> {
 
     match &cli.command {
         Command::Run(id) => match id.id {
-            Some(v) => Ok(runner.run_game(v)?),
+            Some(v) => Ok(runner.run_id(v)?),
             None => Ok(runner.run_intr()?),
         },
         Command::Config => Ok(config.config_editor()?),
