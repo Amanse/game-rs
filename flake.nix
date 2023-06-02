@@ -25,6 +25,7 @@
         # For `nix build` & `nix run`:
         packages.default = craneLib.buildPackage {
           src = craneLib.cleanCargoSource (craneLib.path ./.);
+          cargoExtraArgs = "--features nixos";
 
           # Add extra inputs here or any other derivation settings
           # doCheck = true;
