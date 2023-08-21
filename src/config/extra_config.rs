@@ -1,5 +1,5 @@
-use eyre::Result;
 use dialoguer::{Input, Select};
+use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -26,7 +26,7 @@ impl ExtraConfig {
 
     pub fn get_runners(&self) -> Result<Vec<String>> {
         let mut runners = vec![];
-        let base_path = format!("{}/lutris/runners/wine", std::env::var("XDG_DATA_HOME")?);
+        let base_path = format!("~/lutris/runners/wine");
         if std::path::Path::new(&base_path).exists() {
             Self::get_runners_for(base_path, &mut runners)?;
         }
