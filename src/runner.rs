@@ -7,11 +7,16 @@ use eyre::Result;
 pub struct Runner<'a> {
     config: &'a MainConfig,
     is_verbose: bool,
+    print_only: bool,
 }
 
 impl<'a> Runner<'a> {
-    pub fn new(config: &'a MainConfig, is_verbose: bool) -> Result<Self> {
-        Ok(Runner { config, is_verbose })
+    pub fn new(config: &'a MainConfig, is_verbose: bool, print_only: bool) -> Result<Self> {
+        Ok(Runner {
+            config,
+            is_verbose,
+            print_only,
+        })
     }
 
     pub fn run_intr(&self) -> Result<()> {
@@ -45,6 +50,14 @@ impl<'a> Runner<'a> {
 
         if game.prefix_path != "".to_string() {
             envs.insert("WINEPREFIX", game.prefix_path.as_str());
+        }
+
+        if self.print_only {
+            println!(
+                "WINEPREFIX=\"{}\" \"{}\" \"{}\"",
+                game.prefix_path, game.runner_path, game.exect_path,
+            );
+            return Ok(());
         }
 
         let start = std::time::Instant::now();

@@ -5,10 +5,10 @@ use runner::Runner;
 
 use eyre::Result;
 
-mod download;
-mod runner;
-mod import;
 mod config;
+mod download;
+mod import;
+mod runner;
 
 #[derive(Parser)]
 struct Cli {
@@ -16,6 +16,8 @@ struct Cli {
     command: Command,
     #[arg(short, long)]
     verbose: bool,
+    #[arg(short, long)]
+    print_only: bool,
 }
 
 #[derive(Subcommand)]
@@ -23,7 +25,7 @@ enum Command {
     Run(Run),
     Config,
     Proton,
-    Import
+    Import,
 }
 
 #[derive(Args)]
@@ -34,7 +36,7 @@ struct Run {
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
     let mut config = MainConfig::new()?;
-    let runner = Runner::new(&config, cli.verbose)?;
+    let runner = Runner::new(&config, cli.verbose, cli.print_only)?;
 
     match &cli.command {
         Command::Run(id) => match id.id {
@@ -43,6 +45,6 @@ fn main() -> Result<(), eyre::Report> {
         },
         Command::Config => Ok(config.config_editor()?),
         Command::Proton => Ok(download()?),
-        Command::Import => Ok(import::import_from_lutris()?)
+        Command::Import => Ok(import::import_from_lutris()?),
     }
 }
