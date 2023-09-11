@@ -228,7 +228,7 @@ impl MainConfig {
                     Ok(v) => {
                         if v == TypeId::of::<bool>() {
                             let c = dialoguer::Confirm::new()
-                                .with_prompt(fields[selection].clone())
+                                .with_prompt(fields[selection])
                                 .interact()
                                 .unwrap();
                             if c {
@@ -238,7 +238,7 @@ impl MainConfig {
                             }
                         } else {
                             dialoguer::Input::new()
-                                .with_prompt(fields[selection].clone())
+                                .with_prompt(fields[selection])
                                 .interact_text()
                                 .unwrap()
                         }
