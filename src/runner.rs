@@ -52,6 +52,23 @@ impl<'a> Runner<'a> {
             envs.insert("WINEPREFIX", game.prefix_path.as_str());
         }
 
+        if game.is_ulwgl {
+            envs.insert("PROTONPATH", game.runner_path.as_str());
+            envs.insert("GAMEID", "game-rs");
+
+            run_ulwgl(
+                &envs,
+                self.config
+                    .extra
+                    .ulwgl_path
+                    .clone()
+                    .expect("ULGWL path not set in config"),
+                game.exect_path,
+            );
+
+            return Ok(());
+        }
+
         if self.print_only {
             println!(
                 "WINEPREFIX=\"{}\" \"{}\" \"{}\"",
@@ -67,6 +84,31 @@ impl<'a> Runner<'a> {
         self.config.add_playtime(id, played)?;
         Ok(())
     }
+}
+
+fn run_ulwgl(envs: &HashMap<&str, &str>, ulwgl_path: String, exect_path: String) {
+    let ulwgl_path = {
+        if ulwgl_path.chars().last().unwrap() != '/' {
+            format!("{}/", ulwgl_path)
+        } else {
+            ulwgl_path
+        }
+    };
+
+    #[cfg(feature = "nixos")]
+    Command::new("steam-run")
+        .arg(format!("{}/gamelauncher.sh", ulwgl_path))
+        .arg(exect_path)
+        .envs(envs)
+        .output()
+        .expect("Could not run game");
+
+    #[cfg(not(feature = "nixos"))]
+    Command::new(format!("{}/gamelauncher.sh", ulwgl_path))
+        .envs(envs)
+        .arg(exect_path)
+        .output()
+        .expect("Could not run the game");
 }
 
 fn runner_main(

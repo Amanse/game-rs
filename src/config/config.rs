@@ -179,7 +179,7 @@ impl MainConfig {
 
         if !is_native {
             is_ulwgl = Confirm::new()
-                .with_prompt("Is it native linux game?")
+                .with_prompt("Do you want to use ULGWL?")
                 .interact_opt()?
                 .ok_or(eyre!("select something next time"))?;
 
