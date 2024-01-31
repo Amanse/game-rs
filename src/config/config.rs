@@ -44,6 +44,7 @@ enum ConfigMenu {
     DeleteGame,
     PrefixDir,
     RunnerDir,
+    AddUlwglDir,
 }
 
 impl std::fmt::Display for ConfigMenu {
@@ -54,6 +55,7 @@ impl std::fmt::Display for ConfigMenu {
             ConfigMenu::DeleteGame => write!(f, "Delete game"),
             ConfigMenu::PrefixDir => write!(f, "Add prefix directory"),
             ConfigMenu::RunnerDir => write!(f, "Add runners directory"),
+            ConfigMenu::AddUlwglDir => write!(f, "Add ULGWL directory"),
         }
     }
 }
@@ -142,6 +144,18 @@ impl MainConfig {
                 confy::store("game-rs", "Extra", self.extra.clone())?;
                 return Ok(());
             }
+            ConfigMenu::AddUlwglDir => {
+                let old = self.extra.ulwgl_path.clone().unwrap_or("".to_string());
+
+                let path: String = Input::new()
+                    .with_prompt("Add path to the ULGWL(directory of ./gamelauncher.sh)")
+                    .default(old)
+                    .interact_text()?;
+
+                self.extra.ulwgl_path = Some(path);
+                confy::store("game-rs", "Extra", self.extra.clone())?;
+                return Ok(());
+            }
         }
     }
 
@@ -161,8 +175,14 @@ impl MainConfig {
 
         let mut runner_path: String = "".to_string();
         let mut prefix_path: String = "".to_string();
+        let mut is_ulwgl: bool = false;
 
         if !is_native {
+            is_ulwgl = Confirm::new()
+                .with_prompt("Is it native linux game?")
+                .interact_opt()?
+                .ok_or(eyre!("select something next time"))?;
+
             runner_path = self.extra.runner_selector()?;
 
             prefix_path = Input::new()
@@ -193,6 +213,7 @@ impl MainConfig {
             use_nvidia,
             exect_path,
             runner_path,
+            is_ulwgl,
             is_native,
             playtime: 0,
         };
