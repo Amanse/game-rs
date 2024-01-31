@@ -89,26 +89,24 @@ impl<'a> Runner<'a> {
 fn run_ulwgl(envs: &HashMap<&str, &str>, ulwgl_path: String, exect_path: String) {
     let ulwgl_path = {
         if ulwgl_path.chars().last().unwrap() != '/' {
-            format!("{}/", ulwgl_path)
+            format!("{}/gamelauncher.sh", ulwgl_path)
         } else {
-            ulwgl_path
+            format!("{}gamelauncher.sh", ulwgl_path)
         }
     };
 
+    let mut args: Vec<String> = vec![];
+
     #[cfg(feature = "nixos")]
-    Command::new("steam-run")
-        .arg(format!("{}/gamelauncher.sh", ulwgl_path))
-        .arg(exect_path)
-        .envs(envs)
-        .output()
-        .expect("Could not run game");
+    args.push(ulwgl_path);
+
+    args.push(exect_path.clone());
+
+    #[cfg(feature = "nixos")]
+    run_cmd(String::from("steam-run"), args, envs);
 
     #[cfg(not(feature = "nixos"))]
-    Command::new(format!("{}/gamelauncher.sh", ulwgl_path))
-        .envs(envs)
-        .arg(exect_path)
-        .output()
-        .expect("Could not run the game");
+    run_cmd(ulwgl_path, args, envs);
 }
 
 fn runner_main(
@@ -153,5 +151,13 @@ fn runner_main(
         .envs(envs)
         .args([exect_path])
         .output()
+        .expect("Could not run game");
+}
+
+fn run_cmd(main_program: String, args: Vec<String>, envs: &HashMap<&str, &str>) {
+    Command::new(main_program)
+        .args(args)
+        .envs(envs)
+        .status()
         .expect("Could not run game");
 }
