@@ -28,10 +28,13 @@ pub struct Game {
     pub prefix_path: String,
     pub runner_path: String,
     pub exect_path: String,
-    #[serde(default = "default_old_native")]
+    //Set to false as before this option was added there was no support for native games
+    #[serde(default = "default_false")]
     pub is_native: bool,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
+    #[serde(default = "default_false")]
+    pub is_ulwgl: bool,
 }
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -60,7 +63,7 @@ fn default_playtime() -> u64 {
 }
 
 //Set to false as before this option was added there was no support for native games
-fn default_old_native() -> bool {
+fn default_false() -> bool {
     false
 }
 
