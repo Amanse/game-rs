@@ -24,8 +24,15 @@ struct Cli {
 enum Command {
     Run(Run),
     Config,
-    Proton,
+    #[command(subcommand)]
+    Download(DownloadOptions),
     Import,
+}
+
+#[derive(Subcommand)]
+pub enum DownloadOptions {
+    Proton,
+    ULGWL,
 }
 
 #[derive(Args)]
@@ -44,7 +51,7 @@ fn main() -> Result<(), eyre::Report> {
             None => Ok(runner.run_intr()?),
         },
         Command::Config => Ok(config.config_editor()?),
-        Command::Proton => Ok(download()?),
+        Command::Download(what) => Ok(download(what)?),
         Command::Import => Ok(import::import_from_lutris()?),
     }
 }
