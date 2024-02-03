@@ -5,9 +5,10 @@ use eyre::{eyre, Result};
 
 pub fn download(what: &DownloadOptions) -> Result<()> {
     match what {
-        DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?),
+        DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?, true),
         DownloadOptions::ULGWL => util::download_and_extract(
-            "https://api.github.com/repos/Open-Wine-Components/ULWGL-launcher/zipball",
+            "https://api.github.com/repos/Open-Wine-Components/ULWGL-launcher/tarball",
+            false,
         ),
     }
 }
