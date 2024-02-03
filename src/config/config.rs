@@ -28,10 +28,13 @@ pub struct Game {
     pub prefix_path: String,
     pub runner_path: String,
     pub exect_path: String,
-    #[serde(default = "default_old_native")]
+    //Set to false as before this option was added there was no support for native games
+    #[serde(default = "default_false")]
     pub is_native: bool,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
+    #[serde(default = "default_false")]
+    pub is_ulwgl: bool,
 }
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -41,6 +44,7 @@ enum ConfigMenu {
     DeleteGame,
     PrefixDir,
     RunnerDir,
+    AddUlwglDir,
 }
 
 impl std::fmt::Display for ConfigMenu {
@@ -51,6 +55,7 @@ impl std::fmt::Display for ConfigMenu {
             ConfigMenu::DeleteGame => write!(f, "Delete game"),
             ConfigMenu::PrefixDir => write!(f, "Add prefix directory"),
             ConfigMenu::RunnerDir => write!(f, "Add runners directory"),
+            ConfigMenu::AddUlwglDir => write!(f, "Add ULGWL directory"),
         }
     }
 }
@@ -60,7 +65,7 @@ fn default_playtime() -> u64 {
 }
 
 //Set to false as before this option was added there was no support for native games
-fn default_old_native() -> bool {
+fn default_false() -> bool {
     false
 }
 
@@ -81,7 +86,12 @@ impl ::std::default::Default for GameList {
 
 impl MainConfig {
     pub fn new() -> Result<Self> {
+        #[cfg(debug_assertions)]
+        let games: GameList = confy::load("game-rs", "debug").unwrap_or(GameList::default());
+
+        #[cfg(not(debug_assertions))]
         let games: GameList = confy::load("game-rs", None).unwrap_or(GameList::default());
+
         let extra = ExtraConfig::new()?;
         Ok(Self {
             games: games.games,
@@ -90,6 +100,16 @@ impl MainConfig {
     }
 
     pub fn save_games(&self) -> Result<()> {
+        #[cfg(debug_assertions)]
+        confy::store(
+            "game-rs",
+            "debug",
+            GameList {
+                games: self.games.clone(),
+            },
+        )?;
+
+        #[cfg(not(debug_assertions))]
         confy::store(
             "game-rs",
             None,
@@ -139,6 +159,18 @@ impl MainConfig {
                 confy::store("game-rs", "Extra", self.extra.clone())?;
                 return Ok(());
             }
+            ConfigMenu::AddUlwglDir => {
+                let old = self.extra.ulwgl_path.clone().unwrap_or("".to_string());
+
+                let path: String = Input::new()
+                    .with_prompt("Add path to the ULGWL(directory of ./gamelauncher.sh)")
+                    .default(old)
+                    .interact_text()?;
+
+                self.extra.ulwgl_path = Some(path);
+                confy::store("game-rs", "Extra", self.extra.clone())?;
+                return Ok(());
+            }
         }
     }
 
@@ -158,8 +190,14 @@ impl MainConfig {
 
         let mut runner_path: String = "".to_string();
         let mut prefix_path: String = "".to_string();
+        let mut is_ulwgl: bool = false;
 
         if !is_native {
+            is_ulwgl = Confirm::new()
+                .with_prompt("Do you want to use ULGWL?")
+                .interact_opt()?
+                .ok_or(eyre!("select something next time"))?;
+
             runner_path = self.extra.runner_selector()?;
 
             prefix_path = Input::new()
@@ -190,6 +228,7 @@ impl MainConfig {
             use_nvidia,
             exect_path,
             runner_path,
+            is_ulwgl,
             is_native,
             playtime: 0,
         };

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::process::Command;
 
-use crate::config::config::MainConfig;
+use crate::config::config::{Game, MainConfig};
 use eyre::Result;
 
 pub struct Runner<'a> {
@@ -52,6 +52,24 @@ impl<'a> Runner<'a> {
             envs.insert("WINEPREFIX", game.prefix_path.as_str());
         }
 
+        if game.is_ulwgl {
+            envs.insert("PROTONPATH", game.runner_path.as_str());
+            envs.insert("GAMEID", "game-rs");
+
+            run_ulwgl(
+                &envs,
+                self.config
+                    .extra
+                    .ulwgl_path
+                    .clone()
+                    .expect("ULGWL path not set in config"),
+                game.exect_path,
+                self.is_verbose,
+            );
+
+            return Ok(());
+        }
+
         if self.print_only {
             println!(
                 "WINEPREFIX=\"{}\" \"{}\" \"{}\"",
@@ -61,7 +79,7 @@ impl<'a> Runner<'a> {
         }
 
         let start = std::time::Instant::now();
-        runner_main(&envs, game.runner_path, game.exect_path, self.is_verbose);
+        runner_main(&envs, &game, self.is_verbose);
         let played = start.elapsed().as_secs();
         println!("Played {} for {} minutes", game.name.clone(), played / 60);
         self.config.add_playtime(id, played)?;
@@ -69,47 +87,76 @@ impl<'a> Runner<'a> {
     }
 }
 
-fn runner_main(
-    envs: &HashMap<&str, &str>,
-    runner_path: String,
-    exect_path: String,
-    is_verbose: bool,
-) {
-    use std::path::Path;
-
-    let game_dir = Path::new(&exect_path).parent().unwrap();
-
-    let stdout: std::process::Stdio = {
-        if !is_verbose {
-            std::process::Stdio::null()
+fn run_ulwgl(envs: &HashMap<&str, &str>, ulwgl_path: String, exect_path: String, is_verbose: bool) {
+    let ulwgl_path = {
+        if ulwgl_path.chars().last().unwrap() != '/' {
+            format!("{}/gamelauncher.sh", ulwgl_path)
         } else {
-            std::process::Stdio::inherit()
+            format!("{}gamelauncher.sh", ulwgl_path)
         }
     };
 
-    let mut runner_path: String = runner_path.clone();
-    let mut exect_path: String = exect_path.clone();
+    let mut args: Vec<String> = vec![];
 
-    if runner_path == "".to_string() {
-        runner_path = exect_path;
-        exect_path = "".to_string();
+    #[cfg(feature = "nixos")]
+    args.push(ulwgl_path);
+
+    args.push(exect_path.clone());
+
+    #[cfg(feature = "nixos")]
+    run_cmd(String::from("steam-run"), args, envs, is_verbose);
+
+    #[cfg(not(feature = "nixos"))]
+    run_cmd(ulwgl_path, args, envs, is_verbose);
+}
+
+fn runner_main(envs: &HashMap<&str, &str>, game: &Game, is_verbose: bool) {
+    let mut args: Vec<String> = vec![];
+    #[cfg(not(feature = "nixos"))]
+    let mut main_program: String;
+
+    // Different If statement cuz using #[cfg] inside same if is experimental apparently
+
+    //On Nixos, put the runner and exect_path in args, as main_program will be steam-run but if it
+    //is native game then only put exect_path as runner doesn't exist
+
+    #[cfg(feature = "nixos")]
+    if !game.is_native {
+        args.push(game.runner_path.clone());
+        args.push(game.exect_path.clone());
+    } else {
+        args.push(game.exect_path.clone());
+    }
+
+    //On non-nixos systems, the main program should be the runner and exect should be the argument
+    //while for native games the exec itself will be the main_program
+    #[cfg(not(feature = "nixos"))]
+    if !game.is_native {
+        main_program = game.runner_path.clone();
+        args.push(game.exect_path.clone());
+    } else {
+        main_program = game.exect_path.clone();
     }
 
     #[cfg(feature = "nixos")]
-    Command::new("steam-run")
-        .current_dir(game_dir)
-        .stdout(stdout)
-        .envs(envs)
-        .args([runner_path, exect_path])
-        .output()
-        .expect("Could not run game");
+    run_cmd("steam-run".to_string(), args, envs, is_verbose);
 
     #[cfg(not(feature = "nixos"))]
-    Command::new(runner_path)
-        .current_dir(game_dir)
-        .stdout(stdout)
-        .envs(envs)
-        .args([exect_path])
-        .output()
-        .expect("Could not run game");
+    run_cmd(main_program, args, envs, is_verbose);
+}
+
+fn run_cmd(main_program: String, args: Vec<String>, envs: &HashMap<&str, &str>, is_verbose: bool) {
+    if is_verbose {
+        Command::new(main_program)
+            .args(args)
+            .envs(envs)
+            .status()
+            .expect("Could not run game");
+    } else {
+        Command::new(main_program)
+            .args(args)
+            .envs(envs)
+            .output()
+            .expect("Could not run game");
+    }
 }

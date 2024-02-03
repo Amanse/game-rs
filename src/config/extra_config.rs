@@ -7,6 +7,7 @@ pub struct ExtraConfig {
     pub runner_path: Option<String>,
     pub prefix_dir: Option<String>,
     pub runner_dirs: Option<Vec<String>>,
+    pub ulwgl_path: Option<String>,
 }
 
 impl ::std::default::Default for ExtraConfig {
@@ -15,6 +16,7 @@ impl ::std::default::Default for ExtraConfig {
             runner_path: None,
             prefix_dir: None,
             runner_dirs: None,
+            ulwgl_path: None,
         }
     }
 }
