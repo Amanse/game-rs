@@ -86,7 +86,12 @@ impl ::std::default::Default for GameList {
 
 impl MainConfig {
     pub fn new() -> Result<Self> {
+        #[cfg(debug_assertions)]
+        let games: GameList = confy::load("game-rs", "debug").unwrap_or(GameList::default());
+
+        #[cfg(not(debug_assertions))]
         let games: GameList = confy::load("game-rs", None).unwrap_or(GameList::default());
+
         let extra = ExtraConfig::new()?;
         Ok(Self {
             games: games.games,
@@ -95,6 +100,16 @@ impl MainConfig {
     }
 
     pub fn save_games(&self) -> Result<()> {
+        #[cfg(debug_assertions)]
+        confy::store(
+            "game-rs",
+            "debug",
+            GameList {
+                games: self.games.clone(),
+            },
+        )?;
+
+        #[cfg(not(debug_assertions))]
         confy::store(
             "game-rs",
             None,
