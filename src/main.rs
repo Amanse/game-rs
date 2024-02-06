@@ -32,7 +32,7 @@ enum Command {
 #[derive(Subcommand)]
 pub enum DownloadOptions {
     Proton,
-    ULGWL,
+    ULWGL,
 }
 
 #[derive(Args)]

@@ -56,16 +56,7 @@ impl<'a> Runner<'a> {
             envs.insert("PROTONPATH", game.runner_path.as_str());
             envs.insert("GAMEID", "game-rs");
 
-            run_ulwgl(
-                &envs,
-                self.config
-                    .extra
-                    .ulwgl_path
-                    .clone()
-                    .expect("ULGWL path not set in config"),
-                game.exect_path,
-                self.is_verbose,
-            );
+            run_ulwgl(&envs, game.exect_path, self.is_verbose);
 
             return Ok(());
         }
@@ -87,14 +78,8 @@ impl<'a> Runner<'a> {
     }
 }
 
-fn run_ulwgl(envs: &HashMap<&str, &str>, ulwgl_path: String, exect_path: String, is_verbose: bool) {
-    let ulwgl_path = {
-        if ulwgl_path.chars().last().unwrap() != '/' {
-            format!("{}/gamelauncher.sh", ulwgl_path)
-        } else {
-            format!("{}gamelauncher.sh", ulwgl_path)
-        }
-    };
+fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) {
+    let ulwgl_path = String::from("~/.local/share/ULWGL/ulwgl-run");
 
     let mut args: Vec<String> = vec![];
 
