@@ -79,7 +79,7 @@ impl<'a> Runner<'a> {
 }
 
 fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) {
-    let ulwgl_path = String::from("~/.local/share/ULGWL/ulgwl-run");
+    let ulwgl_path = String::from("~/.local/share/ULWGL/ulwgl-run");
 
     let mut args: Vec<String> = vec![];
 

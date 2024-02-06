@@ -6,7 +6,7 @@ use eyre::{eyre, Result};
 pub fn download(what: &DownloadOptions) -> Result<()> {
     match what {
         DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?, true),
-        DownloadOptions::ULGWL => util::download_and_extract(&get_ulgwl_url()?, false),
+        DownloadOptions::ULWGL => util::download_and_extract(&get_ulgwl_url()?, false),
     }
 }
 
