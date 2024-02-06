@@ -7,7 +7,6 @@ pub struct ExtraConfig {
     pub runner_path: Option<String>,
     pub prefix_dir: Option<String>,
     pub runner_dirs: Option<Vec<String>>,
-    pub ulwgl_path: Option<String>,
 }
 
 impl ::std::default::Default for ExtraConfig {
@@ -16,7 +15,6 @@ impl ::std::default::Default for ExtraConfig {
             runner_path: None,
             prefix_dir: None,
             runner_dirs: None,
-            ulwgl_path: None,
         }
     }
 }
@@ -66,7 +64,7 @@ impl ExtraConfig {
         let runner_list = self.get_runners()?;
         let runner_s = Select::new()
             .with_prompt(
-                "Wine Runner [You can add runner dir to automatically fetch these in config]",
+                "Wine Runner [Leave this empty with ULGWL to automatically download proton]",
             )
             .default(0)
             .item("Custom path")

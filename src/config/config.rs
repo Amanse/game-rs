@@ -44,7 +44,6 @@ enum ConfigMenu {
     DeleteGame,
     PrefixDir,
     RunnerDir,
-    AddUlwglDir,
 }
 
 impl std::fmt::Display for ConfigMenu {
@@ -55,7 +54,6 @@ impl std::fmt::Display for ConfigMenu {
             ConfigMenu::DeleteGame => write!(f, "Delete game"),
             ConfigMenu::PrefixDir => write!(f, "Add prefix directory"),
             ConfigMenu::RunnerDir => write!(f, "Add runners directory"),
-            ConfigMenu::AddUlwglDir => write!(f, "Add ULGWL directory"),
         }
     }
 }
@@ -156,18 +154,6 @@ impl MainConfig {
                 dirs.push(path);
 
                 self.extra.runner_dirs = Some(dirs);
-                confy::store("game-rs", "Extra", self.extra.clone())?;
-                return Ok(());
-            }
-            ConfigMenu::AddUlwglDir => {
-                let old = self.extra.ulwgl_path.clone().unwrap_or("".to_string());
-
-                let path: String = Input::new()
-                    .with_prompt("Add path to the ULGWL(directory of ./gamelauncher.sh)")
-                    .default(old)
-                    .interact_text()?;
-
-                self.extra.ulwgl_path = Some(path);
                 confy::store("game-rs", "Extra", self.extra.clone())?;
                 return Ok(());
             }
