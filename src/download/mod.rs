@@ -6,18 +6,24 @@ use eyre::{eyre, Result};
 pub fn download(what: &DownloadOptions) -> Result<()> {
     match what {
         DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?, true),
-        DownloadOptions::ULGWL => util::download_and_extract(
-            "https://api.github.com/repos/Open-Wine-Components/ULWGL-launcher/tarball",
-            false,
-        ),
+        DownloadOptions::ULGWL => util::download_and_extract(&get_ulgwl_url()?, false),
     }
 }
 
+fn get_ulgwl_url() -> Result<String> {
+    get_latest_release(
+        "https://api.github.com/repos/Open-Wine-Components/ULWGL-launcher".to_string(),
+    )
+}
+
 fn get_proton_url() -> Result<String> {
-    let resp: serde_json::Value =
-        ureq::get("https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases/latest")
-            .call()?
-            .into_json()?;
+    get_latest_release("https://api.github.com/repos/GloriousEggroll/wine-ge-custom".to_string())
+}
+
+fn get_latest_release(repo: String) -> Result<String> {
+    let resp: serde_json::Value = ureq::get(&format!("{}/releases/latest", repo))
+        .call()?
+        .into_json()?;
 
     Ok(resp["assets"][1]["browser_download_url"]
         .as_str()

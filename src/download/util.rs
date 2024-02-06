@@ -4,15 +4,21 @@ use std::{fs, io::BufWriter};
 use tar::Archive;
 
 pub fn download_and_extract(download_url: &str, is_xz: bool) -> Result<()> {
-    let output = Input::new()
-        .with_prompt("Where do you want to download? (put / at the end)")
-        .default("".to_string())
-        .show_default(false)
-        .interact_text()?;
+    let output = {
+        if is_xz {
+            Input::new()
+                .with_prompt("Where do you want to download? (put / at the end)")
+                .default("".to_string())
+                .show_default(false)
+                .interact_text()?
+        } else {
+            String::from("")
+        }
+    };
 
-    let file_path = download_to_tmp(download_url, "file")?;
+    download_to_tmp(download_url, "file")?;
 
-    extract(file_path, output, is_xz)?;
+    extract("/tmp/file".to_string(), output, is_xz)?;
     Ok(())
 }
 
@@ -30,7 +36,8 @@ fn extract(file_path: String, output: String, is_xz: bool) -> Result<()> {
         let decomp = flate2::read::GzDecoder::new(file);
         let mut a = Archive::new(decomp);
 
-        a.unpack(output).unwrap();
+        a.unpack(format!("{}/.local/share/ULWGL", std::env::var("HOME")?))
+            .unwrap();
     }
 
     Ok(())
