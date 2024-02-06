@@ -63,22 +63,29 @@ impl ExtraConfig {
         let runner_path: String;
         let runner_list = self.get_runners()?;
         let runner_s = Select::new()
-            .with_prompt(
-                "Wine Runner [Leave this empty with ULGWL to automatically download proton]",
-            )
+            .with_prompt("Wine Runner")
             .default(0)
             .item("Custom path")
+            .item("Auto download(needs ulwgl)")
             .items(&runner_list)
             .interact()?;
 
-        if runner_s != 0 {
-            runner_path = runner_list[runner_s - 1].clone();
-        } else {
-            runner_path = Input::new()
-                .with_prompt("Path to proton/wine binary")
-                .default(self.runner_path.clone().unwrap_or("".to_string()))
-                .interact_text()?;
+        // @TODO: Remove this crap with wine-ge phaseout
+        match runner_s {
+            0 => {
+                runner_path = Input::new()
+                    .with_prompt("Path to proton/wine binary")
+                    .default(self.runner_path.clone().unwrap_or("".to_string()))
+                    .interact_text()?;
+            }
+            1 => {
+                runner_path = "".to_string();
+            }
+            _ => {
+                runner_path = runner_list[runner_s - 1].clone();
+            }
         }
+
         Ok(runner_path)
     }
 }
