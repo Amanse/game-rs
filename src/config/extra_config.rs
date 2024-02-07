@@ -46,7 +46,7 @@ impl ExtraConfig {
                     if let Some(dir) = p.iter().last().clone() {
                         if p.join("proton").exists() {
                             runners.push(format!(
-                                "{}/{}/proton",
+                                "{}/{}",
                                 base_path.clone().to_string(),
                                 dir.to_str().unwrap()
                             ));

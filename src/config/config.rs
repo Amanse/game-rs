@@ -174,7 +174,6 @@ impl MainConfig {
 
         let mut runner_path: String = "".to_string();
         let mut prefix_path: String = "".to_string();
-        let mut is_ulwgl: bool = false;
 
         if !is_native {
             let use_ulwgl_proton: bool = Confirm::new()
