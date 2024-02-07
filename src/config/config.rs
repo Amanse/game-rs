@@ -180,7 +180,7 @@ impl MainConfig {
 
         if !is_native {
             is_ulwgl = Confirm::new()
-                .with_prompt("Do you want to use ULGWL?")
+                .with_prompt("Do you want to use ULWGL?")
                 .interact_opt()?
                 .ok_or(eyre!("select something next time"))?;
 
