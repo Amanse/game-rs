@@ -44,9 +44,9 @@ impl ExtraConfig {
                 for path in paths {
                     let p = path?.path().clone();
                     if let Some(dir) = p.iter().last().clone() {
-                        if p.join("bin").exists() {
+                        if p.join("proton").exists() {
                             runners.push(format!(
-                                "{}/{}/bin/wine",
+                                "{}/{}",
                                 base_path.clone().to_string(),
                                 dir.to_str().unwrap()
                             ));

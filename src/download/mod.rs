@@ -6,18 +6,22 @@ use eyre::{eyre, Result};
 pub fn download(what: &DownloadOptions) -> Result<()> {
     match what {
         DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?, true),
-        DownloadOptions::ULWGL => util::download_and_extract(&get_ulgwl_url()?, false),
+        DownloadOptions::ULWGL => download_ulwgl(),
     }
 }
 
-fn get_ulgwl_url() -> Result<String> {
+pub fn download_ulwgl() -> Result<()> {
+    util::download_and_extract(&get_ulwgl_url()?, false)
+}
+
+fn get_ulwgl_url() -> Result<String> {
     get_latest_release(
         "https://api.github.com/repos/Open-Wine-Components/ULWGL-launcher".to_string(),
     )
 }
 
 fn get_proton_url() -> Result<String> {
-    get_latest_release("https://api.github.com/repos/GloriousEggroll/wine-ge-custom".to_string())
+    get_latest_release("https://api.github.com/repos/GloriousEggroll/proton-ge-custom".to_string())
 }
 
 fn get_latest_release(repo: String) -> Result<String> {
