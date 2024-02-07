@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::Path;
 use std::process::Command;
 
 use crate::config::config::MainConfig;
@@ -53,9 +54,9 @@ impl<'a> Runner<'a> {
             envs.insert("PROTONPATH", game.runner_path.as_str());
             envs.insert("GAMEID", "game-rs");
 
-            run_ulwgl(&envs, game.exect_path, self.is_verbose);
+            run_ulwgl(&envs, game.exect_path, self.is_verbose)?;
         } else {
-            run_cmd(game.exect_path, vec![], &envs, self.is_verbose);
+            run_native(&envs, game.exect_path, self.is_verbose)?;
         }
 
         let played = start.elapsed().as_secs();
@@ -66,7 +67,21 @@ impl<'a> Runner<'a> {
     }
 }
 
-fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) {
+fn run_native(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
+    let mut args: Vec<String> = vec![];
+
+    args.push(exect_path.clone());
+
+    #[cfg(feature = "nixos")]
+    run_cmd(String::from("steam-run"), args, envs, is_verbose)?;
+
+    #[cfg(not(feature = "nixos"))]
+    run_cmd("bash".to_string(), args, envs, is_verbose)?;
+
+    Ok(())
+}
+
+fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
     let ulwgl_path = String::from("~/.local/share/ULWGL/ulwgl-run");
 
     let mut args: Vec<String> = vec![];
@@ -77,24 +92,52 @@ fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) {
     args.push(exect_path.clone());
 
     #[cfg(feature = "nixos")]
-    run_cmd(String::from("steam-run"), args, envs, is_verbose);
+    run_cmd(String::from("steam-run"), args, envs, is_verbose)?;
 
     #[cfg(not(feature = "nixos"))]
-    run_cmd(ulwgl_path, args, envs, is_verbose);
+    run_cmd(ulwgl_path, args, envs, is_verbose)?;
+
+    Ok(())
 }
 
-fn run_cmd(main_program: String, args: Vec<String>, envs: &HashMap<&str, &str>, is_verbose: bool) {
+fn run_cmd(
+    main_program: String,
+    args: Vec<String>,
+    envs: &HashMap<&str, &str>,
+    is_verbose: bool,
+) -> Result<()> {
+    #[cfg(feature = "nixos")]
+    let binding = {
+        if args.len() == 1 {
+            // Native game
+            args[0].clone()
+        } else {
+            // Wine game, first argument is ulwgl
+            args[1].clone()
+        }
+    };
+
+    #[cfg(not(feature = "nixos"))]
+    let binding = main_program.clone();
+    let path = std::env::current_dir()?;
+
+    let game_dir = Path::new(&binding).parent().unwrap_or(&path);
+
     if is_verbose {
         Command::new(main_program)
+            .current_dir(game_dir)
             .args(args)
             .envs(envs)
             .status()
             .expect("Could not run game");
     } else {
         Command::new(main_program)
+            .current_dir(game_dir)
             .args(args)
             .envs(envs)
             .output()
             .expect("Could not run game");
     }
+
+    Ok(())
 }
