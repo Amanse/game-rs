@@ -6,8 +6,12 @@ use eyre::{eyre, Result};
 pub fn download(what: &DownloadOptions) -> Result<()> {
     match what {
         DownloadOptions::Proton => util::download_and_extract(&get_proton_url()?, true),
-        DownloadOptions::ULWGL => util::download_and_extract(&get_ulwgl_url()?, false),
+        DownloadOptions::ULWGL => download_ulwgl(),
     }
+}
+
+pub fn download_ulwgl() -> Result<()> {
+    util::download_and_extract(&get_ulwgl_url()?, false)
 }
 
 fn get_ulwgl_url() -> Result<String> {

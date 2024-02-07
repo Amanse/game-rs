@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::config::config::MainConfig;
+use crate::download::download_ulwgl;
 use eyre::Result;
 
 pub struct Runner<'a> {
@@ -83,6 +84,11 @@ fn run_native(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) 
 
 fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
     let ulwgl_path = String::from("~/.local/share/ULWGL/ulwgl-run");
+
+    if !Path::new(&ulwgl_path).exists() {
+        println!("ULWGL not installed, installing now!");
+        download_ulwgl()?;
+    }
 
     let mut args: Vec<String> = vec![];
 
