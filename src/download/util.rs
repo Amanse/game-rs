@@ -3,42 +3,34 @@ use eyre::{eyre, Result};
 use std::{fs, io::BufWriter};
 use tar::Archive;
 
-pub fn download_and_extract(download_url: &str, is_xz: bool) -> Result<()> {
+pub fn download_and_extract(download_url: &str, non_ulwgl: bool) -> Result<()> {
     let output = {
-        if is_xz {
+        if non_ulwgl {
             Input::new()
                 .with_prompt("Where do you want to download? (put / at the end)")
                 .default("".to_string())
                 .show_default(false)
                 .interact_text()?
         } else {
-            String::from("")
+            format!("{}/.local/share/ULWGL", std::env::var("HOME")?)
         }
     };
 
     download_to_tmp(download_url, "file")?;
 
-    extract("/tmp/file".to_string(), output, is_xz)?;
+    extract("/tmp/file".to_string(), output)?;
     Ok(())
 }
 
-fn extract(file_path: String, output: String, is_xz: bool) -> Result<()> {
+fn extract(file_path: String, output: String) -> Result<()> {
     let file = fs::File::open(file_path).unwrap();
     println!("Extracting");
 
     // @TODO: Make some enum or struct thingy to generalize this
-    if is_xz {
-        let decomp = xz::read::XzDecoder::new(file);
-        let mut a = Archive::new(decomp);
+    let decomp = flate2::read::GzDecoder::new(file);
+    let mut a = Archive::new(decomp);
 
-        a.unpack(output).unwrap();
-    } else {
-        let decomp = flate2::read::GzDecoder::new(file);
-        let mut a = Archive::new(decomp);
-
-        a.unpack(format!("{}/.local/share/ULWGL", std::env::var("HOME")?))
-            .unwrap();
-    }
+    a.unpack(output).unwrap();
 
     Ok(())
 }

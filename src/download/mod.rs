@@ -17,7 +17,7 @@ fn get_ulwgl_url() -> Result<String> {
 }
 
 fn get_proton_url() -> Result<String> {
-    get_latest_release("https://api.github.com/repos/GloriousEggroll/wine-ge-custom".to_string())
+    get_latest_release("https://api.github.com/repos/GloriousEggroll/proton-ge-custom".to_string())
 }
 
 fn get_latest_release(repo: String) -> Result<String> {
