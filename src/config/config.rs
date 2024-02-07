@@ -33,8 +33,6 @@ pub struct Game {
     pub is_native: bool,
     #[serde(default = "default_playtime")]
     pub playtime: u64,
-    #[serde(default = "default_false")]
-    pub is_ulwgl: bool,
 }
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -179,22 +177,13 @@ impl MainConfig {
         let mut is_ulwgl: bool = false;
 
         if !is_native {
-            is_ulwgl = Confirm::new()
-                .with_prompt("Do you want to use ULWGL?")
+            let use_ulwgl_proton: bool = Confirm::new()
+                .with_prompt("Auto download proton with ulwgl?")
+                .default(true)
                 .interact_opt()?
-                .ok_or(eyre!("select something next time"))?;
+                .ok_or(eyre!("Invalid data"))?;
 
-            if is_ulwgl {
-                let use_ulwgl_proton: bool = Confirm::new()
-                    .with_prompt("Auto download proton with ulwgl?")
-                    .default(true)
-                    .interact_opt()?
-                    .ok_or(eyre!("Invalid data"))?;
-
-                if !use_ulwgl_proton {
-                    runner_path = self.extra.runner_selector()?;
-                }
-            } else {
+            if !use_ulwgl_proton {
                 runner_path = self.extra.runner_selector()?;
             }
 
@@ -226,7 +215,6 @@ impl MainConfig {
             use_nvidia,
             exect_path,
             runner_path,
-            is_ulwgl,
             is_native,
             playtime: 0,
         };
