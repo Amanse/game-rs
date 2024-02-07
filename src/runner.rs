@@ -83,7 +83,10 @@ fn run_native(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) 
 }
 
 fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
-    let ulwgl_path = String::from("~/.local/share/ULWGL/ulwgl-run");
+    let ulwgl_path = String::from(format!(
+        "{}/.local/share/ULWGL/ulwgl-run",
+        std::env::var("HOME")?
+    ));
 
     if !Path::new(&ulwgl_path).exists() {
         println!("ULWGL not installed, installing now!");
