@@ -16,8 +16,6 @@ struct Cli {
     command: Command,
     #[arg(short, long)]
     verbose: bool,
-    #[arg(short, long)]
-    print_only: bool,
 }
 
 #[derive(Subcommand)]
@@ -43,7 +41,7 @@ struct Run {
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
     let mut config = MainConfig::new()?;
-    let runner = Runner::new(&config, cli.verbose, cli.print_only)?;
+    let runner = Runner::new(&config, cli.verbose)?;
 
     match &cli.command {
         Command::Run(id) => match id.id {
