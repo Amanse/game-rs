@@ -184,13 +184,17 @@ impl MainConfig {
                 .interact_opt()?
                 .ok_or(eyre!("select something next time"))?;
 
-            let use_ulwgl_proton: bool = Confirm::new()
-                .with_prompt("Auto download proton with ulwgl?")
-                .default(true)
-                .interact_opt()?
-                .ok_or(eyre!("Invalid data"))?;
+            if is_ulwgl {
+                let use_ulwgl_proton: bool = Confirm::new()
+                    .with_prompt("Auto download proton with ulwgl?")
+                    .default(true)
+                    .interact_opt()?
+                    .ok_or(eyre!("Invalid data"))?;
 
-            if !use_ulwgl_proton {
+                if !use_ulwgl_proton {
+                    runner_path = self.extra.runner_selector()?;
+                }
+            } else {
                 runner_path = self.extra.runner_selector()?;
             }
 
