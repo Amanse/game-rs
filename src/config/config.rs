@@ -184,7 +184,15 @@ impl MainConfig {
                 .interact_opt()?
                 .ok_or(eyre!("select something next time"))?;
 
-            runner_path = self.extra.runner_selector()?;
+            let use_ulwgl_proton: bool = Confirm::new()
+                .with_prompt("Auto download proton with ulwgl?")
+                .default(true)
+                .interact_opt()?
+                .ok_or(eyre!("Invalid data"))?;
+
+            if !use_ulwgl_proton {
+                runner_path = self.extra.runner_selector()?;
+            }
 
             prefix_path = Input::new()
                 .with_prompt("Path to prefix (Uses $HOME/.wine) by default")
