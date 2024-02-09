@@ -42,8 +42,5 @@ cachix works with both adding as a package and just doing `nix build` or `nix ru
 `game-rs config` to go into interactive config mode where you can add, edit or delete the games in config <br />
 `game-rs run` to get a fuzzy select menu of all the games in config, selecting it runs the game <br />
 `game-rs run <id>` to directly run the game with specified id <br />
-`game-rs proton` Download and extract latest wine-ge-custom <br />
-
-unplanned but maybe once it is complete
-- GUI app with tauri or soemthing else
+`game-rs download --help` to see what you can download manually, but you will probably not need this
 
