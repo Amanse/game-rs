@@ -1,5 +1,6 @@
 use dialoguer::Input;
 use eyre::{eyre, Result};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::{fs, io::BufWriter};
 use tar::Archive;
 
@@ -39,10 +40,17 @@ fn download_to_tmp(download_url: &str, name: &str) -> Result<String> {
     let mut file = fs::File::create(format!("{}{}", "/tmp/", name))?;
 
     let resp = ureq::get(download_url).call()?;
+    let len = resp
+        .header("Content-Length")
+        .ok_or(eyre!("Content-Length header not found on request"))?
+        .parse()?;
 
-    println!("Downloading, It may look stuck but it is working!");
+    let pb = ProgressBar::new(len).with_style(ProgressStyle::with_template("{bar:40.green/black} {bytes:>11.green}/{total_bytes:<11.green} {bytes_per_sec:>13.red} eta {eta:.blue}")?);
 
-    if let Err(e) = std::io::copy(&mut resp.into_reader(), &mut BufWriter::new(&mut file)) {
+    if let Err(e) = std::io::copy(
+        &mut pb.wrap_read(resp.into_reader()),
+        &mut BufWriter::new(&mut file),
+    ) {
         return Err(eyre!("Could not write to file: {e}"));
     }
 
