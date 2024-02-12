@@ -12,8 +12,16 @@ pub struct Runner<'a> {
 }
 
 impl<'a> Runner<'a> {
-    pub fn new(config: &'a MainConfig, is_verbose: bool) -> Result<Self> {
-        Ok(Runner { config, is_verbose })
+    pub fn new(config: &'a MainConfig) -> Result<Self> {
+        Ok(Runner {
+            config,
+            is_verbose: false,
+        })
+    }
+
+    pub fn verbosity(mut self, is_verbose: bool) -> Self {
+        self.is_verbose = is_verbose;
+        self
     }
 
     pub fn run_intr(&self) -> Result<()> {
