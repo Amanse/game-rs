@@ -63,9 +63,9 @@ impl<'a> Runner<'a> {
             envs.insert("PROTONPATH", game.runner_path.as_str());
             envs.insert("GAMEID", "game-rs");
 
-            run_ulwgl(&envs, game.exect_path, self.is_verbose)?;
+            self.run_ulwgl(&envs, game.exect_path)?;
         } else {
-            run_native(&envs, game.exect_path, self.is_verbose)?;
+            self.run_native(&envs, game.exect_path)?;
         }
 
         let played = start.elapsed().as_secs();
@@ -74,87 +74,87 @@ impl<'a> Runner<'a> {
 
         Ok(())
     }
-}
 
-fn run_native(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
-    let mut args: Vec<String> = vec![];
+    fn run_native(&self, envs: &HashMap<&str, &str>, exect_path: String) -> Result<()> {
+        let mut args: Vec<String> = vec![];
 
-    args.push(exect_path.clone());
+        args.push(exect_path.clone());
 
-    #[cfg(feature = "nixos")]
-    run_cmd(String::from("steam-run"), args, envs, is_verbose)?;
+        #[cfg(feature = "nixos")]
+        self.run_cmd(String::from("steam-run"), args, envs)?;
 
-    #[cfg(not(feature = "nixos"))]
-    run_cmd("bash".to_string(), args, envs, is_verbose)?;
+        #[cfg(not(feature = "nixos"))]
+        self.run_cmd("bash".to_string(), args, envs)?;
 
-    Ok(())
-}
-
-fn run_ulwgl(envs: &HashMap<&str, &str>, exect_path: String, is_verbose: bool) -> Result<()> {
-    let ulwgl_path = String::from(format!(
-        "{}/.local/share/ULWGL/ulwgl-run",
-        std::env::var("HOME")?
-    ));
-
-    if !Path::new(&ulwgl_path).exists() {
-        println!("ULWGL not installed, installing now!");
-        download_ulwgl()?;
+        Ok(())
     }
 
-    let mut args: Vec<String> = vec![];
+    fn run_ulwgl(&self, envs: &HashMap<&str, &str>, exect_path: String) -> Result<()> {
+        let ulwgl_path = String::from(format!(
+            "{}/.local/share/ULWGL/ulwgl-run",
+            std::env::var("HOME")?
+        ));
 
-    #[cfg(feature = "nixos")]
-    args.push(ulwgl_path);
-
-    args.push(exect_path.clone());
-
-    #[cfg(feature = "nixos")]
-    run_cmd(String::from("steam-run"), args, envs, is_verbose)?;
-
-    #[cfg(not(feature = "nixos"))]
-    run_cmd(ulwgl_path, args, envs, is_verbose)?;
-
-    Ok(())
-}
-
-fn run_cmd(
-    main_program: String,
-    args: Vec<String>,
-    envs: &HashMap<&str, &str>,
-    is_verbose: bool,
-) -> Result<()> {
-    #[cfg(feature = "nixos")]
-    let binding = {
-        if args.len() == 1 {
-            // Native game
-            args[0].clone()
-        } else {
-            // Wine game, first argument is ulwgl
-            args[1].clone()
+        if !Path::new(&ulwgl_path).exists() {
+            println!("ULWGL not installed, installing now!");
+            download_ulwgl()?;
         }
-    };
 
-    #[cfg(not(feature = "nixos"))]
-    let binding = main_program.clone();
-    let path = std::env::current_dir()?;
+        let mut args: Vec<String> = vec![];
 
-    let game_dir = Path::new(&binding).parent().unwrap_or(&path);
+        #[cfg(feature = "nixos")]
+        args.push(ulwgl_path);
 
-    if is_verbose {
-        Command::new(main_program)
-            .current_dir(game_dir)
-            .args(args)
-            .envs(envs)
-            .status()
-            .expect("Could not run game");
-    } else {
-        Command::new(main_program)
-            .current_dir(game_dir)
-            .args(args)
-            .envs(envs)
-            .output()
-            .expect("Could not run game");
+        args.push(exect_path.clone());
+
+        #[cfg(feature = "nixos")]
+        self.run_cmd(String::from("steam-run"), args, envs)?;
+
+        #[cfg(not(feature = "nixos"))]
+        self.run_cmd(ulwgl_path, args, envs)?;
+
+        Ok(())
     }
 
-    Ok(())
+    fn run_cmd(
+        &self,
+        main_program: String,
+        args: Vec<String>,
+        envs: &HashMap<&str, &str>,
+    ) -> Result<()> {
+        #[cfg(feature = "nixos")]
+        let binding = {
+            if args.len() == 1 {
+                // Native game
+                args[0].clone()
+            } else {
+                // Wine game, first argument is ulwgl
+                args[1].clone()
+            }
+        };
+
+        #[cfg(not(feature = "nixos"))]
+        let binding = main_program.clone();
+        let path = std::env::current_dir()?;
+
+        let game_dir = Path::new(&binding).parent().unwrap_or(&path);
+
+        if self.is_verbose {
+            Command::new(main_program)
+                .current_dir(game_dir)
+                .args(args)
+                .envs(envs)
+                .status()
+                .expect("Could not run game");
+        } else {
+            Command::new(main_program)
+                .current_dir(game_dir)
+                .args(args)
+                .envs(envs)
+                .output()
+                .expect("Could not run game");
+        }
+
+        Ok(())
+    }
 }
