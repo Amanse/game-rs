@@ -82,7 +82,7 @@ impl ExtraConfig {
                 runner_path = "".to_string();
             }
             _ => {
-                runner_path = runner_list[runner_s - 1].clone();
+                runner_path = runner_list[runner_s - 2].clone();
             }
         }
 

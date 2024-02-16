@@ -1,4 +1,5 @@
 use crate::config::extra_config::ExtraConfig;
+use crate::config::game::Game;
 use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input, Select};
 use enum_iterator::{all, Sequence};
 use eyre::{eyre, Result};
@@ -20,21 +21,6 @@ pub struct GameList {
     pub games: Vec<Game>,
 }
 
-#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update)]
-pub struct Game {
-    pub id: usize,
-    pub name: String,
-    pub use_nvidia: bool,
-    pub prefix_path: String,
-    pub runner_path: String,
-    pub exect_path: String,
-    //Set to false as before this option was added there was no support for native games
-    #[serde(default = "default_false")]
-    pub is_native: bool,
-    #[serde(default = "default_playtime")]
-    pub playtime: u64,
-}
-
 #[derive(Debug, PartialEq, Sequence)]
 enum ConfigMenu {
     AddGame,
@@ -54,15 +40,6 @@ impl std::fmt::Display for ConfigMenu {
             ConfigMenu::RunnerDir => write!(f, "Add runners directory"),
         }
     }
-}
-
-fn default_playtime() -> u64 {
-    0
-}
-
-//Set to false as before this option was added there was no support for native games
-fn default_false() -> bool {
-    false
 }
 
 impl ::std::default::Default for MainConfig {
@@ -114,13 +91,6 @@ impl MainConfig {
             },
         )?;
         Ok(())
-    }
-
-    //@TODO: Move functions to Game struct impl
-    pub fn add_playtime(&self, id: usize, to_add: u64) -> Result<()> {
-        let mut new = self.clone();
-        new.games[id].playtime += to_add;
-        new.save_games()
     }
 
     pub fn config_editor(&mut self) -> Result<()> {
@@ -225,7 +195,7 @@ impl MainConfig {
     }
 
     fn edit_game(&mut self) -> Result<()> {
-        let id = self.game_selector()?;
+        let id = self.game_selector(None)?;
         let mut game = self.games[id].clone();
         let fields = serde_introspection::serde_introspect::<Game>();
 
@@ -280,7 +250,7 @@ impl MainConfig {
     }
 
     fn delete_game(&mut self) -> Result<()> {
-        let id = self.game_selector()?;
+        let id = self.game_selector(None)?;
 
         let game = self.games[id].clone();
 
@@ -305,7 +275,11 @@ impl MainConfig {
         }
     }
 
-    pub fn game_selector(&self) -> Result<usize> {
+    pub fn game_selector(&self, id: Option<usize>) -> Result<usize> {
+        if let Some(id) = id {
+            return Ok(self.games.iter().position(|a| a.id == id).unwrap());
+        }
+
         let prompts: Vec<String> = self
             .games
             .iter()
