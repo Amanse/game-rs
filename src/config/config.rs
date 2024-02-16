@@ -10,7 +10,7 @@ use std::any::TypeId;
 #[derive(Debug, PartialEq, Eq)]
 struct ParseBoolError;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MainConfig {
     pub games: Vec<Game>,
     pub extra: ExtraConfig,
@@ -250,8 +250,12 @@ impl MainConfig {
     }
 
     fn delete_game(&mut self) -> Result<()> {
-        let id = self.game_selector(None)?;
+        let idx = self.game_selector(None)?;
 
+        self.delete_game_internal(idx)
+    }
+
+    fn delete_game_internal(&mut self, id: usize) -> Result<()> {
         let game = self.games[id].clone();
 
         println!("Executable Path: {}", game.exect_path);
@@ -301,5 +305,56 @@ impl MainConfig {
             .ok_or(eyre!("Nothing selected, goodbye"))?;
 
         Ok(id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::{extra_config::ExtraConfig, game::Game};
+
+    use super::MainConfig;
+
+    fn get_games() -> Vec<Game> {
+        vec![
+            Game {
+                id: 1,
+                name: "test-game22".to_string(),
+                prefix_path: "/home/me/prefix2".to_string(),
+                runner_path: "/home/me/proton2".to_string(),
+                exect_path: "/home/me/exec2".to_string(),
+                playtime: 0,
+                is_native: false,
+                use_nvidia: false,
+            },
+            Game {
+                id: 0,
+                name: "test-game".to_string(),
+                prefix_path: "/home/me/prefix".to_string(),
+                runner_path: "/home/me/proton".to_string(),
+                exect_path: "/home/me/exec".to_string(),
+                playtime: 0,
+                is_native: false,
+                use_nvidia: false,
+            },
+        ]
+    }
+
+    fn get_config() -> MainConfig {
+        MainConfig {
+            games: get_games(),
+            extra: ExtraConfig::default(),
+        }
+    }
+
+    #[test]
+    fn delete_test() {
+        let mut config = get_config();
+
+        config.delete_game_internal(1).unwrap();
+
+        let mut c2 = get_config();
+        c2.games.remove(1);
+
+        assert_eq!(c2.games[0], config.games[0]);
     }
 }

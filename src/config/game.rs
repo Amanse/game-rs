@@ -2,7 +2,7 @@ use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 use std::{any::TypeId, collections::HashMap, process::Command};
 
-#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update)]
+#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
 pub struct Game {
     pub id: usize,
     pub name: String,

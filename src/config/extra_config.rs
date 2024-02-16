@@ -2,7 +2,7 @@ use dialoguer::{Input, Select};
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ExtraConfig {
     pub runner_path: Option<String>,
     pub prefix_dir: Option<String>,
