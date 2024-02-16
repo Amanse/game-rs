@@ -6,7 +6,6 @@ use eyre::Result;
 
 mod config;
 mod download;
-mod import;
 
 #[derive(Parser)]
 struct Cli {
@@ -20,7 +19,6 @@ enum Command {
     Config,
     #[command(subcommand)]
     Download(DownloadOptions),
-    Import,
 }
 
 #[derive(Subcommand)]
@@ -43,10 +41,12 @@ fn main() -> Result<(), eyre::Report> {
     match &cli.command {
         Command::Run(r_param) => {
             let idx = config.game_selector(r_param.id)?;
-            config.games[idx].clone().run()
+            let game = config.games[idx].clone().run()?;
+            config.games[idx] = game;
+            config.save_games()?;
+            Ok(())
         }
         Command::Config => Ok(config.config_editor()?),
         Command::Download(what) => Ok(download(what)?),
-        Command::Import => Ok(import::import_from_lutris()?),
     }
 }

@@ -27,10 +27,9 @@ fn default_false() -> bool {
 }
 
 impl Game {
-    pub fn run(mut self) -> Result<()> {
+    pub fn run(mut self) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        self.run_cmd(&mut cmd)?;
-        Ok(())
+        Ok(self.run_cmd(&mut cmd)?)
     }
 
     fn gen_cmd(&self) -> Result<Command> {
@@ -72,7 +71,7 @@ impl Game {
         //Execute the command and return Game object with updated runtime
 
         let start = std::time::Instant::now();
-        cmd.spawn().unwrap();
+        cmd.output().unwrap();
         let played = start.elapsed().as_secs();
         self.playtime += played;
         Ok(self.clone())
