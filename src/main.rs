@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use config::config::MainConfig;
+use config::{config::MainConfig, config2::State};
 use download::download;
 
 use eyre::Result;
@@ -38,6 +38,8 @@ fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
     let mut config = MainConfig::new()?;
 
+    let mut state = State::new()?;
+
     match &cli.command {
         Command::Run(r_param) => {
             let idx = config.game_selector(r_param.id)?;
@@ -46,7 +48,7 @@ fn main() -> Result<(), eyre::Report> {
             config.save_games()?;
             Ok(())
         }
-        Command::Config => Ok(config.config_editor()?),
+        Command::Config => Ok(state.editor()?),
         Command::Download(what) => Ok(download(what)?),
     }
 }
