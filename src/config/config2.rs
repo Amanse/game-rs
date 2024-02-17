@@ -66,8 +66,7 @@ impl State {
         // mutating it based on the index provided, you can implement entire crud opeartions just
         // from one menu
         let menu = Menu::new(opts)?;
-        let to_c = menu.select_and_run(self)?;
-        to_c(self);
+        menu.select_and_run(self)?;
         Ok(())
     }
 

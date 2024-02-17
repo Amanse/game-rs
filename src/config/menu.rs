@@ -19,7 +19,7 @@ impl<'a, S> Menu<'a, S> {
         Ok(Menu { options })
     }
 
-    pub fn select_and_run(&self, _state: &mut S) -> Result<fn(&mut S) -> &mut S> {
+    pub fn select_and_run(&self, state: &mut S) -> Result<()> {
         //@TODO: Find a cleaner way to collect hashmap keys into a vector/slice
         let mut items = vec![];
 
@@ -34,8 +34,7 @@ impl<'a, S> Menu<'a, S> {
             .unwrap();
 
         let key = items[selection].deref();
-
-        //Return the function associated with the selected key
-        return Ok(self.options[key]);
+        self.options[key](state);
+        Ok(())
     }
 }
