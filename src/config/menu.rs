@@ -19,7 +19,7 @@ impl<'a, S> Menu<'a, S> {
         Ok(Menu { options })
     }
 
-    pub fn select_and_run(&self, _state: &mut State) -> Result<fn(&mut S) -> &mut S> {
+    pub fn select_and_run(&self, _state: &mut S) -> Result<fn(&mut S) -> &mut S> {
         //@TODO: Find a cleaner way to collect hashmap keys into a vector/slice
         let mut items = vec![];
 
