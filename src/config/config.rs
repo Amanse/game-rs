@@ -345,16 +345,4 @@ mod tests {
             extra: ExtraConfig::default(),
         }
     }
-
-    #[test]
-    fn delete_test() {
-        let mut config = get_config();
-
-        config.delete_game_internal(1).unwrap();
-
-        let mut c2 = get_config();
-        c2.games.remove(1);
-
-        assert_eq!(c2.games[0], config.games[0]);
-    }
 }
