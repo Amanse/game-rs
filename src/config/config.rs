@@ -251,15 +251,7 @@ impl MainConfig {
 
     fn delete_game(&mut self) -> Result<()> {
         let idx = self.game_selector(None)?;
-
-        self.delete_game_internal(idx)
-    }
-
-    fn delete_game_internal(&mut self, id: usize) -> Result<()> {
-        let game = self.games[id].clone();
-
-        println!("Executable Path: {}", game.exect_path);
-        println!("Prefix: {}", game.prefix_path);
+        let game = self.games[idx].clone();
 
         let confirmation: bool = Confirm::new()
             .with_prompt(format!(
@@ -270,13 +262,21 @@ impl MainConfig {
             .ok_or(eyre!("NOthing selected, goodbye"))?;
 
         if confirmation {
-            self.games.remove(id);
-            self.save_games()?;
+            println!("Executable Path: {}", game.exect_path);
+            println!("Prefix: {}", game.prefix_path);
+            self.delete_game_internal(idx)?;
             println!("Deleted {}", game.name);
-            Ok(())
         } else {
             std::process::exit(1);
         }
+
+        Ok(())
+    }
+
+    fn delete_game_internal(&mut self, id: usize) -> Result<()> {
+        self.games.remove(id);
+        self.save_games()?;
+        Ok(())
     }
 
     pub fn game_selector(&self, id: Option<usize>) -> Result<usize> {
