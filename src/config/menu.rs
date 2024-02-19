@@ -4,7 +4,7 @@ use std::{collections::HashMap, fmt::Display, ops::Deref};
 use dialoguer::FuzzySelect;
 
 pub struct Menu<'a, T: Display + Hash + Eq + ?Sized, S> {
-    options: HashMap<&'a T, &'a dyn Fn(&mut S, usize) -> &mut S>,
+    options: HashMap<&'a T, &'a dyn Fn(&mut S) -> &mut S>,
 }
 
 impl<'a, T: Display + Hash + Eq + ?Sized, S> Menu<'a, T, S> {
@@ -15,12 +15,12 @@ impl<'a, T: Display + Hash + Eq + ?Sized, S> Menu<'a, T, S> {
     }
 
     //Fuck it just call the add function with random usize
-    pub fn add_option(&mut self, val: &'a T, f: &'a dyn Fn(&mut S, usize) -> &mut S) -> &mut Self {
+    pub fn add_option(&mut self, val: &'a T, f: &'a dyn Fn(&mut S) -> &mut S) -> &mut Self {
         self.options.insert(val, f);
         self
     }
 
-    pub fn user_select(&self) -> &'a dyn Fn(&mut S, usize) -> &mut S {
+    pub fn user_select(&self) -> &'a dyn Fn(&mut S) -> &mut S {
         let mut items = vec![];
 
         for key in self.options.keys() {

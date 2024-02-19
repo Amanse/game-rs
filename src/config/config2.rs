@@ -15,14 +15,25 @@ impl Config {
 
     pub fn editor(&mut self) {
         let mut menu = Menu::new();
-        menu.add_option("Add", &Self::add_game);
+        menu.add_option("Add Game", &Self::add_game);
+        menu.add_option("Update Game", &Self::update_game);
+        menu.add_option("Delete Game", &Self::delete_game);
 
         let a = menu.user_select();
-        let next_idx = 0;
-        a(self, next_idx);
+        a(self);
     }
 
-    pub fn add_game(&mut self, id: usize) -> &mut Self {
+    pub fn add_game(&mut self) -> &mut Self {
+        todo!()
+    }
+
+    pub fn delete_game(&mut self) -> &mut Self {
+        // Call game selector and then call the main deleting function on that index
+        todo!()
+    }
+
+    pub fn update_game(&mut self) -> &mut Self {
+        // Call game selector and then call the main updating function on that index
         todo!()
     }
 }
