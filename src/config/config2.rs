@@ -9,21 +9,30 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn print_games(&self) {
-        println!("{:?}", self.games);
-    }
-
     //@TODO: impl default for Config, impl new
     //impl save config, use confy
     //
+    //
+    pub fn new() -> Result<Self> {
+        #[cfg(debug_assertions)]
+        let games: Vec<Game> = confy::load("game-rs", "debug").unwrap_or(vec![]);
+
+        #[cfg(not(debug_assertions))]
+        let games: Vec<Game> = confy::load("game-rs", None).unwrap_or(vec![]);
+
+        Ok(Config { games })
+    }
+
+    fn save_config(&self) {
+        #[cfg(debug_assertions)]
+        confy::store("game-rs", "debug", self.games.clone()).unwrap();
+        #[cfg(not(debug_assertions))]
+        confy::store("game-rs", None, self.games.clone()).unwrap();
+    }
 
     pub fn update_with_id(&mut self, game: Game) {
         let idx = self.get_game_idx(game.id).unwrap();
         self.games[idx] = game.clone();
-    }
-
-    pub fn new() -> Self {
-        Config { games: vec![] }
     }
 
     fn get_next_id(&self) -> usize {
@@ -58,6 +67,7 @@ impl Config {
         let a = menu.user_select();
         a(self);
         // Self.save
+        self.save_config();
     }
 
     pub fn add_game(&mut self) -> &mut Self {

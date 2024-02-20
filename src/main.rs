@@ -37,7 +37,7 @@ struct Run {
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
 
-    let mut con2 = Config::new();
+    let mut con2 = Config::new()?;
     match &cli.command {
         Command::Run(r_param) => {
             let g = con2.game_selector()?;
