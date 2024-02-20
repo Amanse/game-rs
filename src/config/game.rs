@@ -19,6 +19,12 @@ pub struct Game {
     pub playtime: u64,
 }
 
+impl ToString for Game {
+    fn to_string(&self) -> String {
+        format!("{} - {} ({})", self.id, self.name, self.playtime)
+    }
+}
+
 fn default_playtime() -> u64 {
     0
 }

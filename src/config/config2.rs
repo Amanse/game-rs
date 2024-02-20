@@ -1,4 +1,8 @@
+use dialoguer::FuzzySelect;
+
 use super::{game::Game, menu::Menu};
+
+use eyre::Result;
 
 pub struct Config {
     games: Vec<Game>,
@@ -8,6 +12,9 @@ impl Config {
     pub fn print_games(&self) {
         println!("{:?}", self.games);
     }
+
+    //@TODO: impl default for Config, impl new
+    //impl save config, use confy
 
     pub fn new() -> Self {
         Config { games: vec![] }
@@ -19,6 +26,17 @@ impl Config {
         } else {
             0
         }
+    }
+
+    pub fn game_selector(&self) -> Result<Game> {
+        let sel = FuzzySelect::new()
+            .with_prompt("Select game")
+            .items(&self.games.clone())
+            .interact_opt()
+            .unwrap()
+            .unwrap();
+
+        Ok(self.games[sel].clone())
     }
 
     pub fn editor(&mut self) {
