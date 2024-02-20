@@ -1,29 +1,39 @@
 use dialoguer::FuzzySelect;
+use serde_derive::{Deserialize, Serialize};
 
 use super::{game::Game, menu::Menu};
 
 use eyre::Result;
 
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     games: Vec<Game>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            games: Default::default(),
+        }
+    }
 }
 
 impl Config {
     pub fn new() -> Result<Self> {
         #[cfg(debug_assertions)]
-        let games: Vec<Game> = confy::load("game-rs", "debug").unwrap_or(vec![]);
+        let config: Config = confy::load("game-rs", "debug").unwrap_or(Config::default());
 
         #[cfg(not(debug_assertions))]
-        let games: Vec<Game> = confy::load("game-rs", None).unwrap_or(vec![]);
+        let config: Config = confy::load("game-rs", None).unwrap_or(vec![]);
 
-        Ok(Config { games })
+        Ok(config)
     }
 
     fn save_config(&self) {
         #[cfg(debug_assertions)]
-        confy::store("game-rs", "debug", self.games.clone()).unwrap();
+        confy::store("game-rs", "debug", self.clone()).unwrap();
         #[cfg(not(debug_assertions))]
-        confy::store("game-rs", None, self.games.clone()).unwrap();
+        confy::store("game-rs", None, self.clone()).unwrap();
     }
 
     pub fn update_with_id(&mut self, game: Game) {
