@@ -47,7 +47,10 @@ fn main() -> Result<(), eyre::Report> {
             config.save_games()?;
             Ok(())
         }
-        Command::Config => Ok(con2.editor()),
+        Command::Config => {
+            con2.editor();
+            Ok(())
+        },
         Command::Download(what) => Ok(download(what)?),
     }
 }

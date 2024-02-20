@@ -104,7 +104,7 @@ impl Game {
 
     pub fn run(mut self) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        Ok(self.run_cmd(&mut cmd)?)
+        self.run_cmd(&mut cmd)
     }
 
     fn gen_cmd(&self) -> Result<Command> {

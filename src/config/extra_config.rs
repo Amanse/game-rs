@@ -2,21 +2,11 @@ use dialoguer::{Input, Select};
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ExtraConfig {
     pub runner_path: Option<String>,
     pub prefix_dir: Option<String>,
     pub runner_dirs: Option<Vec<String>>,
-}
-
-impl ::std::default::Default for ExtraConfig {
-    fn default() -> Self {
-        Self {
-            runner_path: None,
-            prefix_dir: None,
-            runner_dirs: None,
-        }
-    }
 }
 
 impl ExtraConfig {
@@ -26,7 +16,7 @@ impl ExtraConfig {
 
     pub fn get_runners(&self) -> Result<Vec<String>> {
         let mut runners = vec![];
-        let base_path = format!("~/lutris/runners/wine");
+        let base_path = "~/lutris/runners/wine".to_string();
         if std::path::Path::new(&base_path).exists() {
             Self::get_runners_for(base_path, &mut runners)?;
         }
@@ -39,23 +29,17 @@ impl ExtraConfig {
     }
 
     fn get_runners_for(base_path: String, runners: &mut Vec<String>) -> Result<&mut Vec<String>> {
-        match std::fs::read_dir(base_path.clone()) {
-            Ok(paths) => {
-                for path in paths {
-                    let p = path?.path().clone();
-                    if let Some(dir) = p.iter().last().clone() {
-                        if p.join("proton").exists() {
-                            runners.push(format!(
-                                "{}/{}",
-                                base_path.clone().to_string(),
-                                dir.to_str().unwrap()
-                            ));
-                        }
+        if let Ok(paths) = std::fs::read_dir(base_path.clone()) {
+            for path in paths {
+                let p = path?.path().clone();
+                if let Some(dir) = p.iter().last() {
+                    if p.join("proton").exists() {
+                        runners.push(format!("{}/{}", base_path.clone(), dir.to_str().unwrap()));
                     }
                 }
             }
-            Err(_) => {}
         };
+
         Ok(runners)
     }
 

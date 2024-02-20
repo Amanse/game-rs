@@ -54,5 +54,5 @@ fn download_to_tmp(download_url: &str, name: &str) -> Result<String> {
         return Err(eyre!("Could not write to file: {e}"));
     }
 
-    return Ok(format!("/tmp/{}", name));
+    Ok(format!("/tmp/{}", name))
 }

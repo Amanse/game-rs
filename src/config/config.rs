@@ -11,12 +11,14 @@ use std::any::TypeId;
 struct ParseBoolError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Default)]
 pub struct MainConfig {
     pub games: Vec<Game>,
     pub extra: ExtraConfig,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[derive(Default)]
 pub struct GameList {
     pub games: Vec<Game>,
 }
@@ -42,20 +44,9 @@ impl std::fmt::Display for ConfigMenu {
     }
 }
 
-impl ::std::default::Default for MainConfig {
-    fn default() -> Self {
-        Self {
-            games: vec![],
-            extra: ExtraConfig::default(),
-        }
-    }
-}
 
-impl ::std::default::Default for GameList {
-    fn default() -> Self {
-        Self { games: vec![] }
-    }
-}
+
+
 
 impl MainConfig {
     pub fn new() -> Result<Self> {
@@ -112,10 +103,10 @@ impl MainConfig {
                     .interact_text()?;
                 self.extra.prefix_dir = Some(path);
                 confy::store("game-rs", "Extra", self.extra.clone())?;
-                return Ok(());
+                Ok(())
             }
             ConfigMenu::RunnerDir => {
-                let mut dirs = self.extra.runner_dirs.clone().unwrap_or(vec![]);
+                let mut dirs = self.extra.runner_dirs.clone().unwrap_or_default();
                 let path: String = Input::new()
                     .with_prompt("Another Runner directory")
                     .interact_text()?;
@@ -123,7 +114,7 @@ impl MainConfig {
 
                 self.extra.runner_dirs = Some(dirs);
                 confy::store("game-rs", "Extra", self.extra.clone())?;
-                return Ok(());
+                Ok(())
             }
         }
     }
@@ -201,7 +192,7 @@ impl MainConfig {
 
         loop {
             let selection = Select::new()
-                .items(&fields)
+                .items(fields)
                 .item("Save")
                 .default(0)
                 .interact_opt()?
@@ -292,7 +283,7 @@ impl MainConfig {
                     "{} - {} ({}m)",
                     g.id.clone(),
                     g.name.clone(),
-                    g.playtime.clone() / 60
+                    g.playtime / 60
                 )
             })
             .collect();

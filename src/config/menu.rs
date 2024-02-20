@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use std::{collections::HashMap, fmt::Display, ops::Deref};
+use std::{collections::HashMap, fmt::Display};
 
 use dialoguer::FuzzySelect;
 
@@ -33,7 +33,7 @@ impl<'a, T: Display + Hash + Eq + ?Sized, S> Menu<'a, T, S> {
             .unwrap()
             .unwrap();
 
-        let key = items[sel].deref();
-        return self.options[key];
+        let key = *items[sel];
+        self.options[key]
     }
 }
