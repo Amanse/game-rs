@@ -2,6 +2,8 @@ use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 use std::{any::TypeId, collections::HashMap, process::Command};
 
+use super::util::{bool_input, string_input};
+
 #[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
 pub struct Game {
     pub id: usize,
@@ -27,6 +29,73 @@ fn default_false() -> bool {
 }
 
 impl Game {
+    pub fn new() -> Game {
+        Game {
+            id: 0,
+            playtime: 0,
+            // Apparently dialogure also uses builder pattern this way
+            // https://docs.rs/dialoguer/latest/src/dialoguer/prompts/fuzzy_select.rs.html#381
+            name: "".to_string(),
+            exect_path: "".to_string(),
+            prefix_path: "".to_string(),
+            runner_path: "".to_string(),
+            use_nvidia: false,
+            is_native: false,
+        }
+    }
+
+    pub fn take_user_input(self) -> Result<Game> {
+        let mut game = self
+            .clone()
+            .set_name(string_input("Name Of the game", self.name.clone()))
+            .set_exect(string_input("Executable path", self.exect_path.clone()))
+            .set_native(bool_input("Is this a native game?"));
+
+        if !game.is_native {
+            game = game.set_wine_params(
+                string_input("Prefix path", self.prefix_path.clone()),
+                string_input("Runner path", self.runner_path.clone()),
+            );
+        }
+
+        game = game
+            .set_exect(string_input("Executable path", self.exect_path.clone()))
+            .set_nvidia(bool_input("Use nvidia GPU?"));
+
+        Ok(game)
+    }
+
+    pub fn set_native(mut self, native: bool) -> Self {
+        self.is_native = native;
+        self
+    }
+
+    pub fn set_exect(mut self, exect_path: String) -> Self {
+        self.exect_path = exect_path;
+        self
+    }
+
+    pub fn set_wine_params(mut self, prefix_path: String, runner_path: String) -> Self {
+        self.prefix_path = prefix_path;
+        self.runner_path = runner_path;
+        self
+    }
+
+    pub fn set_nvidia(mut self, nvidia: bool) -> Self {
+        self.use_nvidia = nvidia;
+        self
+    }
+
+    pub fn set_name(mut self, name: String) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn set_id(mut self, id: usize) -> Self {
+        self.id = id;
+        self
+    }
+
     pub fn run(mut self) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
         Ok(self.run_cmd(&mut cmd)?)
