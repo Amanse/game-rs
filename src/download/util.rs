@@ -27,7 +27,6 @@ fn extract(file_path: String, output: String) -> Result<()> {
     let file = fs::File::open(file_path).unwrap();
     println!("Extracting");
 
-    // @TODO: Make some enum or struct thingy to generalize this
     let decomp = flate2::read::GzDecoder::new(file);
     let mut a = Archive::new(decomp);
 
