@@ -15,6 +15,12 @@ impl Config {
 
     //@TODO: impl default for Config, impl new
     //impl save config, use confy
+    //
+
+    pub fn update_with_id(&mut self, game: Game) {
+        let idx = self.get_game_idx(game.id).unwrap();
+        self.games[idx] = game.clone();
+    }
 
     pub fn new() -> Self {
         Config { games: vec![] }
@@ -39,6 +45,10 @@ impl Config {
         Ok(self.games[sel].clone())
     }
 
+    fn get_game_idx(&self, id: usize) -> Result<usize> {
+        Ok(self.games.iter().position(|a| a.id == id).unwrap())
+    }
+
     pub fn editor(&mut self) {
         let mut menu = Menu::new();
         menu.add_option("Add Game", &Self::add_game);
@@ -47,6 +57,7 @@ impl Config {
 
         let a = menu.user_select();
         a(self);
+        // Self.save
     }
 
     pub fn add_game(&mut self) -> &mut Self {
@@ -58,11 +69,17 @@ impl Config {
 
     pub fn delete_game(&mut self) -> &mut Self {
         // Call game selector and then call the main deleting function on that index
-        todo!()
+        let idx = self.get_game_idx(self.game_selector().unwrap().id).unwrap();
+
+        self.games.remove(idx);
+        self
     }
 
     pub fn update_game(&mut self) -> &mut Self {
         // Call game selector and then call the main updating function on that index
-        todo!()
+        let g = self.game_selector().unwrap();
+        let game = Game::take_user_input(g.clone()).unwrap();
+        self.update_with_id(game);
+        self
     }
 }

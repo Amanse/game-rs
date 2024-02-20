@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use config::{config::MainConfig, config2::Config};
+use config::config2::Config;
 use download::download;
 
 use eyre::Result;
@@ -36,21 +36,20 @@ struct Run {
 
 fn main() -> Result<(), eyre::Report> {
     let cli = Cli::parse();
-    let mut config = MainConfig::new()?;
 
     let mut con2 = Config::new();
     match &cli.command {
         Command::Run(r_param) => {
-            let idx = config.game_selector(r_param.id)?;
-            let game = config.games[idx].clone().run()?;
-            config.games[idx] = game;
-            config.save_games()?;
+            let g = con2.game_selector()?;
+            let game = g.run()?;
+            con2.update_with_id(game);
+
             Ok(())
         }
         Command::Config => {
             con2.editor();
             Ok(())
-        },
+        }
         Command::Download(what) => Ok(download(what)?),
     }
 }
