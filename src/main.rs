@@ -29,7 +29,6 @@ pub enum DownloadOptions {
 
 #[derive(Args)]
 struct Run {
-    id: Option<usize>,
     #[arg(short, long)]
     verbose: bool,
 }
@@ -39,7 +38,7 @@ fn main() -> Result<(), eyre::Report> {
 
     let mut con2 = Config::new()?;
     match &cli.command {
-        Command::Run(r_param) => {
+        Command::Run(_r_param) => {
             let g = con2.game_selector()?;
             let game = g.run()?;
             con2.update_with_id(game);

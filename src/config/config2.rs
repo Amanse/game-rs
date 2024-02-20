@@ -9,10 +9,6 @@ pub struct Config {
 }
 
 impl Config {
-    //@TODO: impl default for Config, impl new
-    //impl save config, use confy
-    //
-    //
     pub fn new() -> Result<Self> {
         #[cfg(debug_assertions)]
         let games: Vec<Game> = confy::load("game-rs", "debug").unwrap_or(vec![]);
