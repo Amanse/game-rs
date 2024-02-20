@@ -64,9 +64,7 @@ impl Game {
             );
         }
 
-        game = game
-            .set_exect(string_input("Executable path", self.exect_path.clone()))
-            .set_nvidia(bool_input("Use nvidia GPU?"));
+        game = game.set_nvidia(bool_input("Use nvidia GPU?"));
 
         Ok(game)
     }
@@ -123,7 +121,9 @@ impl Game {
         cmd.arg(self.exect_path.clone());
 
         cmd.env("WINEPREFIX", self.prefix_path.clone());
-        cmd.env("PROTONPATH", self.runner_path.clone());
+        if self.runner_path != "" {
+            cmd.env("PROTONPATH", self.runner_path.clone());
+        }
         cmd.env("GAMEID", "game-rs");
 
         if self.use_nvidia {
