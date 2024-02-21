@@ -4,7 +4,6 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ExtraConfig {
-    pub runner_path: Option<String>,
     pub prefix_dir: Option<String>,
     pub runner_dirs: Option<Vec<String>>,
 }
@@ -59,7 +58,6 @@ impl ExtraConfig {
             0 => {
                 runner_path = Input::new()
                     .with_prompt("Path to proton/wine binary")
-                    .default(self.runner_path.clone().unwrap_or("".to_string()))
                     .interact_text()?;
             }
             1 => {

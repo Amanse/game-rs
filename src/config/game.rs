@@ -2,7 +2,10 @@ use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 use std::{any::TypeId, collections::HashMap, process::Command};
 
-use super::util::{bool_input, string_input};
+use super::{
+    extra::ExtraConfig,
+    util::{bool_input, string_input},
+};
 
 #[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
 pub struct Game {
@@ -51,6 +54,7 @@ impl Game {
     }
 
     pub fn take_user_input(self) -> Result<Game> {
+        let extra = ExtraConfig::new()?;
         let mut game = self
             .clone()
             .set_name(string_input("Name Of the game", self.name.clone()))
@@ -60,7 +64,7 @@ impl Game {
         if !game.is_native {
             game = game.set_wine_params(
                 string_input("Prefix path", self.prefix_path.clone()),
-                string_input("Runner path", self.runner_path.clone()),
+                extra.runner_selector()?,
             );
         }
 

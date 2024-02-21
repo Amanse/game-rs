@@ -31,9 +31,9 @@ impl Config {
 
     fn save_config(&self) {
         #[cfg(debug_assertions)]
-        confy::store("game-rs", "debug", self.clone()).unwrap();
+        confy::store("game-rs", "debug", self).unwrap();
         #[cfg(not(debug_assertions))]
-        confy::store("game-rs", None, self.clone()).unwrap();
+        confy::store("game-rs", None, self).unwrap();
     }
 
     pub fn update_with_id(&mut self, game: Game) {
