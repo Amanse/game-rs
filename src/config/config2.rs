@@ -5,13 +5,10 @@ use super::{game::Game, menu::Menu};
 
 use eyre::Result;
 
-#[derive(Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Config {
     games: Vec<Game>,
 }
-
-
 
 impl Config {
     pub fn new() -> Result<Self> {
@@ -19,7 +16,7 @@ impl Config {
         let config: Config = confy::load("game-rs", "debug").unwrap_or(Config::default());
 
         #[cfg(not(debug_assertions))]
-        let config: Config = confy::load("game-rs", None).unwrap_or(vec![]);
+        let config: Config = confy::load("game-rs", None).unwrap_or(Config::default());
 
         Ok(config)
     }
