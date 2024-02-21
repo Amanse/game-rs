@@ -6,17 +6,12 @@ use super::{game::Game, menu::Menu};
 use eyre::Result;
 
 #[derive(Serialize, Deserialize)]
+#[derive(Default)]
 pub struct Config {
     games: Vec<Game>,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            games: Default::default(),
-        }
-    }
-}
+
 
 impl Config {
     pub fn new() -> Result<Self> {

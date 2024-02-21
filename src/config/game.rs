@@ -125,7 +125,7 @@ impl Game {
         cmd.arg(self.exect_path.clone());
 
         cmd.env("WINEPREFIX", self.prefix_path.clone());
-        if self.runner_path != "" {
+        if !self.runner_path.is_empty() {
             cmd.env("PROTONPATH", self.runner_path.clone());
         }
         cmd.env("GAMEID", "game-rs");

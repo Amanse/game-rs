@@ -43,7 +43,6 @@ impl ExtraConfig {
     }
 
     pub fn runner_selector(&self) -> Result<String> {
-        let runner_path: String;
         let runner_list = self.get_runners()?;
         let runner_s = Select::new()
             .with_prompt("Wine Runner")
@@ -54,19 +53,13 @@ impl ExtraConfig {
             .interact()?;
 
         // @TODO: Remove this crap with wine-ge phaseout
-        match runner_s {
-            0 => {
-                runner_path = Input::new()
-                    .with_prompt("Path to proton/wine binary")
-                    .interact_text()?;
-            }
-            1 => {
-                runner_path = "".to_string();
-            }
-            _ => {
-                runner_path = runner_list[runner_s - 2].clone();
-            }
-        }
+        let runner_path: String = match runner_s {
+            0 => Input::new()
+                .with_prompt("Path to proton/wine binary")
+                .interact_text()?,
+            1 => "".to_string(),
+            _ => runner_list[runner_s - 2].clone(),
+        };
 
         Ok(runner_path)
     }
