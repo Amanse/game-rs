@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use std::{collections::HashMap, fmt::Display};
 
-use dialoguer::FuzzySelect;
+use dialoguer::{theme::ColorfulTheme, FuzzySelect};
 
 pub struct Menu<'a, T: Display + Hash + Eq + ?Sized, S> {
     options: HashMap<&'a T, &'a dyn Fn(&mut S) -> &mut S>,
@@ -27,7 +27,8 @@ impl<'a, T: Display + Hash + Eq + ?Sized, S> Menu<'a, T, S> {
             items.push(key);
         }
 
-        let sel = FuzzySelect::new()
+        let sel = FuzzySelect::with_theme(&ColorfulTheme::default())
+            .default(0)
             .items(&items)
             .interact_opt()
             .unwrap()
