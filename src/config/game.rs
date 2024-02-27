@@ -4,7 +4,7 @@ use std::{any::TypeId, collections::HashMap, process::Command};
 
 use super::{
     extra::ExtraConfig,
-    util::{bool_input, string_input},
+    util::{self, bool_input, string_input},
 };
 
 #[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
@@ -53,8 +53,7 @@ impl Game {
         }
     }
 
-    pub fn take_user_input(self) -> Result<Game> {
-        let extra = ExtraConfig::new()?;
+    pub fn take_user_input(self, extra: ExtraConfig) -> Result<Game> {
         let mut game = self
             .clone()
             .set_name(string_input("Name Of the game", self.name.clone()))
@@ -62,10 +61,14 @@ impl Game {
             .set_native(bool_input("Is this a native game?"));
 
         if !game.is_native {
-            game = game.set_wine_params(
-                string_input("Prefix path", self.prefix_path.clone()),
-                extra.runner_selector()?,
-            );
+            let prefix = {
+                if self.prefix_path == "" {
+                    extra.prefix_selector()?
+                } else {
+                    util::string_input("Prefix dir", self.prefix_path)
+                }
+            };
+            game = game.set_wine_params(prefix, extra.runner_selector()?);
         }
 
         game = game.set_nvidia(bool_input("Use nvidia GPU?"));

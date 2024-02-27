@@ -2,6 +2,8 @@ use dialoguer::{Input, Select};
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
 
+use super::{menu::Menu, util};
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ExtraConfig {
     pub prefix_dir: Option<String>,
@@ -9,10 +11,6 @@ pub struct ExtraConfig {
 }
 
 impl ExtraConfig {
-    pub fn new() -> Result<Self> {
-        Ok(confy::load("game-rs", "Extra").unwrap_or(ExtraConfig::default()))
-    }
-
     pub fn get_runners(&self) -> Result<Vec<String>> {
         let mut runners = vec![];
         let base_path = "~/lutris/runners/wine".to_string();
@@ -25,6 +23,38 @@ impl ExtraConfig {
             }
         }
         Ok(runners)
+    }
+
+    pub fn editor(&mut self) -> &mut Self {
+        let mut menu = Menu::new();
+        menu.add_option("Add Runner dirs", &Self::add_runners_dir);
+        menu.add_option("Add Prefix Dir", &Self::add_prefix_dir);
+
+        let a = menu.user_select();
+        a(self);
+
+        self
+    }
+
+    pub fn add_runners_dir(&mut self) -> &mut Self {
+        let inp = util::string_input("Add new dir with runners", String::from(""));
+        if let Some(ref mut a) = self.runner_dirs {
+            a.push(inp);
+        } else {
+            self.runner_dirs = Some(vec![inp]);
+        }
+        self
+    }
+
+    pub fn add_prefix_dir(&mut self) -> &mut Self {
+        let inp = util::string_input(
+            "Add Prefix Directory",
+            self.prefix_dir.clone().unwrap_or(String::from("")),
+        );
+
+        self.prefix_dir = Some(inp);
+
+        self
     }
 
     fn get_runners_for(base_path: String, runners: &mut Vec<String>) -> Result<&mut Vec<String>> {
@@ -40,6 +70,14 @@ impl ExtraConfig {
         };
 
         Ok(runners)
+    }
+
+    pub fn prefix_selector(&self) -> Result<String> {
+        let inp = util::string_input(
+            "Prefix dir",
+            self.prefix_dir.clone().unwrap_or(String::from("")),
+        );
+        Ok(inp)
     }
 
     pub fn runner_selector(&self) -> Result<String> {

@@ -1,13 +1,14 @@
 use dialoguer::FuzzySelect;
 use serde_derive::{Deserialize, Serialize};
 
-use super::{game::Game, menu::Menu};
+use super::{extra::ExtraConfig, game::Game, menu::Menu};
 
 use eyre::Result;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Config {
     games: Vec<Game>,
+    extra: ExtraConfig,
 }
 
 impl Config {
@@ -61,6 +62,7 @@ impl Config {
         menu.add_option("Add Game", &Self::add_game);
         menu.add_option("Update Game", &Self::update_game);
         menu.add_option("Delete Game", &Self::delete_game);
+        menu.add_option("Edit extra Options", &Self::extra_editor);
 
         let a = menu.user_select();
         a(self);
@@ -68,9 +70,18 @@ impl Config {
         self.save_config();
     }
 
+    fn extra_editor(&mut self) -> &mut Self {
+        ExtraConfig::editor(&mut self.extra);
+        println!(
+            "{}",
+            self.extra.prefix_dir.clone().unwrap_or("".to_string())
+        );
+        self
+    }
+
     pub fn add_game(&mut self) -> &mut Self {
         let id = self.get_next_id();
-        let game = Game::take_user_input(Game::new().set_id(id)).unwrap();
+        let game = Game::take_user_input(Game::new().set_id(id), self.extra.clone()).unwrap();
         self.games.push(game);
         self
     }
@@ -86,7 +97,7 @@ impl Config {
     pub fn update_game(&mut self) -> &mut Self {
         // Call game selector and then call the main updating function on that index
         let g = self.game_selector().unwrap();
-        let game = Game::take_user_input(g.clone()).unwrap();
+        let game = Game::take_user_input(g.clone(), self.extra.clone()).unwrap();
         self.update_with_id(game);
         self
     }
