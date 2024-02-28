@@ -62,7 +62,7 @@ impl Game {
 
         if !game.is_native {
             let prefix = {
-                if self.prefix_path == "" {
+                if self.prefix_path.is_empty() {
                     extra.prefix_selector()?
                 } else {
                     util::string_input("Prefix dir", self.prefix_path)
