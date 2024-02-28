@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lib_reflect = { path = "./lib_reflect" }
 clap = { version = "4.1.4", features = ["derive"] }
 confy = "0.5.1"
 console = "0.15.5"

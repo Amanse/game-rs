@@ -1,13 +1,13 @@
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
-use std::{any::TypeId, collections::HashMap, process::Command};
+use std::{collections::HashMap, process::Command};
 
 use super::{
     extra::ExtraConfig,
     util::{self, bool_input, string_input},
 };
 
-#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Game {
     pub id: usize,
     pub name: String,
