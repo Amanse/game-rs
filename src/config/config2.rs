@@ -102,3 +102,48 @@ impl Config {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::config::{extra::ExtraConfig, game::Game};
+
+    use super::Config;
+    fn get_game(id: usize) -> Game {
+        Game {
+            id,
+            name: "test-game".to_string(),
+            prefix_path: "/home/me/prefix".to_string(),
+            runner_path: "/home/me/proton".to_string(),
+            exect_path: "/home/me/exec".to_string(),
+            playtime: 0,
+            is_native: false,
+            use_nvidia: false,
+        }
+    }
+
+    fn get_extra() -> ExtraConfig {
+        ExtraConfig {
+            prefix_dir: Some("/home/me/prefixes/".to_string()),
+            runner_dirs: Some(vec!["/home/me/runners".to_string()]),
+        }
+    }
+
+    fn get_config() -> Config {
+        Config {
+            games: vec![get_game(0), get_game(1), get_game(3)],
+            extra: get_extra(),
+        }
+    }
+
+    #[test]
+    fn test_update_with_id() {
+        let mut conf = get_config();
+        let newg = get_game(3).set_name("Test success".to_string());
+
+        conf.update_with_id(newg.clone());
+        let idx = conf.get_game_idx(3).unwrap();
+        let got = conf.games[idx].clone();
+
+        assert_eq!(got, newg);
+    }
+}
