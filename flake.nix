@@ -35,7 +35,7 @@
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [cargo rustc rustfmt rust-analyzer];
+          nativeBuildInputs = with pkgs; [cargo rustc rustfmt rust-analyzer clippy];
           shellHook = ''
             export PATH="$PATH:/home/me/.cargo/bin"
           '';

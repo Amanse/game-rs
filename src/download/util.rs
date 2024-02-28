@@ -27,7 +27,6 @@ fn extract(file_path: String, output: String) -> Result<()> {
     let file = fs::File::open(file_path).unwrap();
     println!("Extracting");
 
-    // @TODO: Make some enum or struct thingy to generalize this
     let decomp = flate2::read::GzDecoder::new(file);
     let mut a = Archive::new(decomp);
 
@@ -54,5 +53,5 @@ fn download_to_tmp(download_url: &str, name: &str) -> Result<String> {
         return Err(eyre!("Could not write to file: {e}"));
     }
 
-    return Ok(format!("/tmp/{}", name));
+    Ok(format!("/tmp/{}", name))
 }

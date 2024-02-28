@@ -1,8 +1,13 @@
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
-use std::{any::TypeId, collections::HashMap, process::Command};
+use std::{collections::HashMap, process::Command};
 
-#[derive(Serialize, Deserialize, Clone, lib_reflect::dynamic_update, Debug, PartialEq)]
+use super::{
+    extra::ExtraConfig,
+    util::{self, bool_input, string_input},
+};
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Game {
     pub id: usize,
     pub name: String,
@@ -17,6 +22,12 @@ pub struct Game {
     pub playtime: u64,
 }
 
+impl ToString for Game {
+    fn to_string(&self) -> String {
+        format!("{} - {} ({})", self.id, self.name, self.playtime)
+    }
+}
+
 fn default_playtime() -> u64 {
     0
 }
@@ -27,9 +38,78 @@ fn default_false() -> bool {
 }
 
 impl Game {
+    pub fn new() -> Game {
+        Game {
+            id: 0,
+            playtime: 0,
+            // Apparently dialogure also uses builder pattern this way
+            // https://docs.rs/dialoguer/latest/src/dialoguer/prompts/fuzzy_select.rs.html#381
+            name: "".to_string(),
+            exect_path: "".to_string(),
+            prefix_path: "".to_string(),
+            runner_path: "".to_string(),
+            use_nvidia: false,
+            is_native: false,
+        }
+    }
+
+    pub fn take_user_input(self, extra: ExtraConfig) -> Result<Game> {
+        let mut game = self
+            .clone()
+            .set_name(string_input("Name Of the game", self.name.clone()))
+            .set_exect(string_input("Executable path", self.exect_path.clone()))
+            .set_native(bool_input("Is this a native game?"));
+
+        if !game.is_native {
+            let prefix = {
+                if self.prefix_path.is_empty() {
+                    extra.prefix_selector()?
+                } else {
+                    util::string_input("Prefix dir", self.prefix_path)
+                }
+            };
+            game = game.set_wine_params(prefix, extra.runner_selector()?);
+        }
+
+        game = game.set_nvidia(bool_input("Use nvidia GPU?"));
+
+        Ok(game)
+    }
+
+    pub fn set_native(mut self, native: bool) -> Self {
+        self.is_native = native;
+        self
+    }
+
+    pub fn set_exect(mut self, exect_path: String) -> Self {
+        self.exect_path = exect_path;
+        self
+    }
+
+    pub fn set_wine_params(mut self, prefix_path: String, runner_path: String) -> Self {
+        self.prefix_path = prefix_path;
+        self.runner_path = runner_path;
+        self
+    }
+
+    pub fn set_nvidia(mut self, nvidia: bool) -> Self {
+        self.use_nvidia = nvidia;
+        self
+    }
+
+    pub fn set_name(mut self, name: String) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn set_id(mut self, id: usize) -> Self {
+        self.id = id;
+        self
+    }
+
     pub fn run(mut self) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        Ok(self.run_cmd(&mut cmd)?)
+        self.run_cmd(&mut cmd)
     }
 
     fn gen_cmd(&self) -> Result<Command> {
@@ -48,7 +128,9 @@ impl Game {
         cmd.arg(self.exect_path.clone());
 
         cmd.env("WINEPREFIX", self.prefix_path.clone());
-        cmd.env("PROTONPATH", self.runner_path.clone());
+        if !self.runner_path.is_empty() {
+            cmd.env("PROTONPATH", self.runner_path.clone());
+        }
         cmd.env("GAMEID", "game-rs");
 
         if self.use_nvidia {
