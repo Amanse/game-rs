@@ -119,10 +119,7 @@ impl Game {
         let mut cmd = Command::new("sh");
 
         if !self.is_native {
-            #[cfg(feature = "nixos")]
-            cmd.arg("steam-run");
-
-            cmd.arg(format!("{}/ulwgl-run", get_ulwgl_path()));
+            cmd.arg(format!("umu"));
         }
 
         cmd.arg(self.exect_path.clone());
@@ -169,10 +166,7 @@ mod tests {
     use super::Game;
 
     fn get_ulwgl_exec_path() -> String {
-        format!(
-            "{}/.local/share/ULWGL/ulwgl-run",
-            std::env::var("HOME").unwrap()
-        )
+        format!("umu")
     }
 
     fn get_game() -> Game {
@@ -219,10 +213,7 @@ mod tests {
         let args: Vec<&OsStr> = cmd.get_args().collect();
 
         #[cfg(feature = "nixos")]
-        assert_eq!(
-            args,
-            &["steam-run", &get_ulwgl_exec_path(), "/home/me/exec"]
-        );
+        assert_eq!(args, &[&get_ulwgl_exec_path(), "/home/me/exec"]);
 
         #[cfg(not(feature = "nixos"))]
         assert_eq!(args, &[&get_ulwgl_exec_path(), "/home/me/exec"]);

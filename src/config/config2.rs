@@ -47,7 +47,8 @@ impl Config {
             .with_prompt("Select game")
             .items(&self.games.clone())
             .interact_opt()
-            .unwrap()?;
+            .unwrap()
+            .unwrap();
 
         Ok(self.games[sel].clone())
     }
