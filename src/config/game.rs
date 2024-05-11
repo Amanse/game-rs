@@ -1,6 +1,9 @@
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
-use std::{collections::HashMap, process::Command};
+use std::{
+    collections::HashMap,
+    process::{Command, Stdio},
+};
 
 use super::{
     extra::ExtraConfig,
@@ -107,9 +110,9 @@ impl Game {
         self
     }
 
-    pub fn run(mut self) -> Result<Game> {
+    pub fn run(mut self, is_verbose: bool) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        self.run_cmd(&mut cmd)
+        self.run_cmd(&mut cmd, is_verbose)
     }
 
     fn gen_cmd(&self) -> Result<Command> {
@@ -144,11 +147,17 @@ impl Game {
         Ok(cmd)
     }
 
-    fn run_cmd(&mut self, cmd: &mut Command) -> Result<Game> {
+    fn run_cmd(&mut self, cmd: &mut Command, is_verbose: bool) -> Result<Game> {
         //Execute the command and return Game object with updated runtime
 
         let start = std::time::Instant::now();
-        cmd.output().unwrap();
+
+        if is_verbose {
+            cmd.status().unwrap();
+        } else {
+            cmd.output().unwrap();
+        }
+
         let played = start.elapsed().as_secs();
         self.playtime += played;
         Ok(self.clone())

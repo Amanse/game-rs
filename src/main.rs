@@ -38,9 +38,9 @@ fn main() -> Result<(), eyre::Report> {
 
     let mut con2 = Config::new()?;
     match &cli.command {
-        Command::Run(_r_param) => {
+        Command::Run(r_param) => {
             let g = con2.game_selector()?;
-            let game = g.run()?;
+            let game = g.run(r_param.verbose)?;
             con2.update_with_id(game);
 
             Ok(())
