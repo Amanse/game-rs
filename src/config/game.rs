@@ -107,9 +107,9 @@ impl Game {
         self
     }
 
-    pub fn run(mut self) -> Result<Game> {
+    pub fn run(mut self, is_verbose: bool) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        self.run_cmd(&mut cmd)
+        self.run_cmd(&mut cmd, is_verbose)
     }
 
     fn gen_cmd(&self) -> Result<Command> {
@@ -119,10 +119,7 @@ impl Game {
         let mut cmd = Command::new("sh");
 
         if !self.is_native {
-            #[cfg(feature = "nixos")]
-            cmd.arg("steam-run");
-
-            cmd.arg(format!("{}/ulwgl-run", get_ulwgl_path()));
+            cmd.arg("umu");
         }
 
         cmd.arg(self.exect_path.clone());
@@ -147,19 +144,21 @@ impl Game {
         Ok(cmd)
     }
 
-    fn run_cmd(&mut self, cmd: &mut Command) -> Result<Game> {
+    fn run_cmd(&mut self, cmd: &mut Command, is_verbose: bool) -> Result<Game> {
         //Execute the command and return Game object with updated runtime
 
         let start = std::time::Instant::now();
-        cmd.output().unwrap();
+
+        if is_verbose {
+            cmd.status().unwrap();
+        } else {
+            cmd.output().unwrap();
+        }
+
         let played = start.elapsed().as_secs();
         self.playtime += played;
         Ok(self.clone())
     }
-}
-
-fn get_ulwgl_path() -> String {
-    format!("{}/.local/share/ULWGL", std::env::var("HOME").unwrap())
 }
 
 #[cfg(test)]
@@ -169,10 +168,7 @@ mod tests {
     use super::Game;
 
     fn get_ulwgl_exec_path() -> String {
-        format!(
-            "{}/.local/share/ULWGL/ulwgl-run",
-            std::env::var("HOME").unwrap()
-        )
+        format!("umu")
     }
 
     fn get_game() -> Game {
@@ -219,10 +215,7 @@ mod tests {
         let args: Vec<&OsStr> = cmd.get_args().collect();
 
         #[cfg(feature = "nixos")]
-        assert_eq!(
-            args,
-            &["steam-run", &get_ulwgl_exec_path(), "/home/me/exec"]
-        );
+        assert_eq!(args, &[&get_ulwgl_exec_path(), "/home/me/exec"]);
 
         #[cfg(not(feature = "nixos"))]
         assert_eq!(args, &[&get_ulwgl_exec_path(), "/home/me/exec"]);
