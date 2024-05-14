@@ -1,9 +1,6 @@
 use eyre::Result;
 use serde_derive::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    process::{Command, Stdio},
-};
+use std::{collections::HashMap, process::Command};
 
 use super::{
     extra::ExtraConfig,
@@ -122,7 +119,7 @@ impl Game {
         let mut cmd = Command::new("sh");
 
         if !self.is_native {
-            cmd.arg(format!("umu"));
+            cmd.arg("umu");
         }
 
         cmd.arg(self.exect_path.clone());
@@ -162,10 +159,6 @@ impl Game {
         self.playtime += played;
         Ok(self.clone())
     }
-}
-
-fn get_ulwgl_path() -> String {
-    format!("{}/.local/share/ULWGL", std::env::var("HOME").unwrap())
 }
 
 #[cfg(test)]
