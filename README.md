@@ -2,14 +2,26 @@
 
 [![Rust](https://github.com/Amanse/game-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/Amanse/game-rs/actions/workflows/rust.yml)
 
+## Prerequisite
+
+You need to have [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) installed, it used to be managed by game-rs but it needs it's installation steps now, it is pre installed for the nix version.
+
 ## Install
+
+### Arch linux
+
+Install AUR packages
+[game-rs](https://aur.archlinux.org/packages/game-rs-bin) (Thankyou proledatarian. very cool) & [umu-launcher](https://aur.archlinux.org/packages/umu-launcher)
+
+### Other distros
+
 `cargo install --path .`
-or use [AUR](https://aur.archlinux.org/packages/game-rs-bin) (Thankyou proledatarian. very cool)
-### for nixos
-#### Without flakes
-`cargo install --features nixos --path .` to compile and install manually  
-#### With flakes
+and you can find your way of installing umu-launcher [here](https://github.com/Open-Wine-Components/umu-launcher/releases)
+
+### For Nixos
+
 You can do `nix run` to run it or you can add it as a package in your configuration
+
 ```nix
 #flake.nix
 {
@@ -18,7 +30,9 @@ You can do `nix run` to run it or you can add it as a package in your configurat
   };
 }
 ```
+
 and then you can add it in your packages with
+
 ```nix
 {
   environment.systemPackages = with pkgs; [
@@ -26,8 +40,10 @@ and then you can add it in your packages with
   ];
 }
 ```
+
 You can also use [Cachix](https://game-rs.cachix.org) to get binary cache <br />
 To add cachix:
+
 ```nix
 {
   nix.settings = {
@@ -36,11 +52,13 @@ To add cachix:
   };
 }
 ```
+
 cachix works with both adding as a package and just doing `nix build` or `nix run`
 
 ## Usage
+
 `game-rs config` to go into interactive config mode where you can add, edit or delete the games in config <br />
 `game-rs run` to get a fuzzy select menu of all the games in config, selecting it runs the game <br />
 `game-rs run <id>` to directly run the game with specified id <br />
+`game-rs run -v` to run in verbose mode
 `game-rs download --help` to see what you can download manually, but you will probably not need this
-
