@@ -1,5 +1,7 @@
 # A minimal (cli) Game launcher for linux written in rust
 
+<sub><sup>this program uses [ZenVer](https://github.com/NotAShelf/ZenVer) from z3 and above</sup></sub>
+
 [![Rust](https://github.com/Amanse/game-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/Amanse/game-rs/actions/workflows/rust.yml)
 
 ## Prerequisite
