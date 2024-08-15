@@ -119,7 +119,7 @@ impl Game {
         let mut cmd = Command::new("sh");
 
         if !self.is_native {
-            cmd.arg("umu");
+            cmd.arg("umu-run");
         }
 
         cmd.arg(self.exect_path.clone());
@@ -168,7 +168,7 @@ mod tests {
     use super::Game;
 
     fn get_ulwgl_exec_path() -> String {
-        format!("umu")
+        format!("umu-run")
     }
 
     fn get_game() -> Game {
