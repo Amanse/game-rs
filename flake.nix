@@ -4,7 +4,6 @@
     # naersk.url = "github:nix-community/naersk";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     crane.url = "github:ipetkov/crane";
-    crane.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -20,7 +19,7 @@
         };
         #
         # naersk' = pkgs.callPackage naersk {};
-        craneLib = crane.lib.${system};
+        craneLib = crane.mkLib pkgs;
       in {
         # For `nix build` & `nix run`:
         packages.default = craneLib.buildPackage {
