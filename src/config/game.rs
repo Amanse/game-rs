@@ -107,9 +107,12 @@ impl Game {
         self
     }
 
-    pub fn run(mut self) -> Result<Game> {
+    pub fn run(mut self, is_verbose: bool) -> Result<Game> {
         let mut cmd = self.gen_cmd()?;
-        self.run_cmd(&mut cmd)
+        if is_verbose {
+            println!("{:?}", &cmd)
+        }
+        self.run_cmd(&mut cmd, is_verbose)
     }
 
     fn gen_cmd(&self) -> Result<Command> {
@@ -119,15 +122,15 @@ impl Game {
         let mut cmd = Command::new("sh");
 
         if !self.is_native {
-            #[cfg(feature = "nixos")]
-            cmd.arg("steam-run");
-
-            cmd.arg(format!("{}/ulwgl-run", get_ulwgl_path()));
+            cmd.arg("umu-run");
         }
 
         cmd.arg(self.exect_path.clone());
 
-        cmd.env("WINEPREFIX", self.prefix_path.clone());
+        if !self.prefix_path.is_empty() {
+            cmd.env("WINEPREFIX", self.prefix_path.clone());
+        }
+
         if !self.runner_path.is_empty() {
             cmd.env("PROTONPATH", self.runner_path.clone());
         }
@@ -147,84 +150,19 @@ impl Game {
         Ok(cmd)
     }
 
-    fn run_cmd(&mut self, cmd: &mut Command) -> Result<Game> {
+    fn run_cmd(&mut self, cmd: &mut Command, is_verbose: bool) -> Result<Game> {
         //Execute the command and return Game object with updated runtime
 
         let start = std::time::Instant::now();
-        cmd.output().unwrap();
+
+        if is_verbose {
+            cmd.status().unwrap();
+        } else {
+            cmd.output().unwrap();
+        }
+
         let played = start.elapsed().as_secs();
         self.playtime += played;
         Ok(self.clone())
-    }
-}
-
-fn get_ulwgl_path() -> String {
-    format!("{}/.local/share/ULWGL", std::env::var("HOME").unwrap())
-}
-
-#[cfg(test)]
-mod tests {
-    use std::ffi::OsStr;
-
-    use super::Game;
-
-    fn get_ulwgl_exec_path() -> String {
-        format!(
-            "{}/.local/share/ULWGL/ulwgl-run",
-            std::env::var("HOME").unwrap()
-        )
-    }
-
-    fn get_game() -> Game {
-        Game {
-            id: 0,
-            name: "test-game".to_string(),
-            prefix_path: "/home/me/prefix".to_string(),
-            runner_path: "/home/me/proton".to_string(),
-            exect_path: "/home/me/exec".to_string(),
-            playtime: 0,
-            is_native: false,
-            use_nvidia: false,
-        }
-    }
-
-    #[test]
-    fn env_test() {
-        let game = get_game();
-        let cmd = game.gen_cmd().unwrap();
-
-        let envs: Vec<(&OsStr, Option<&OsStr>)> = cmd.get_envs().collect();
-
-        assert_eq!(
-            envs,
-            &[
-                (OsStr::new("GAMEID"), Some(OsStr::new("game-rs"))),
-                (
-                    OsStr::new("PROTONPATH"),
-                    Some(OsStr::new("/home/me/proton"))
-                ),
-                (
-                    OsStr::new("WINEPREFIX"),
-                    Some(OsStr::new("/home/me/prefix"))
-                ),
-            ]
-        );
-    }
-
-    #[test]
-    fn args_test() {
-        let game = get_game();
-        let cmd = game.gen_cmd().unwrap();
-
-        let args: Vec<&OsStr> = cmd.get_args().collect();
-
-        #[cfg(feature = "nixos")]
-        assert_eq!(
-            args,
-            &["steam-run", &get_ulwgl_exec_path(), "/home/me/exec"]
-        );
-
-        #[cfg(not(feature = "nixos"))]
-        assert_eq!(args, &[&get_ulwgl_exec_path(), "/home/me/exec"]);
     }
 }

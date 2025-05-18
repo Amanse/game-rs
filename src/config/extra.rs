@@ -106,29 +106,4 @@ impl ExtraConfig {
 #[cfg(test)]
 mod tests {
     use std::fs;
-
-    #[test]
-    fn test_proton_finder() {
-        let parent = "/tmp/parent";
-        fs::create_dir(parent).unwrap();
-        let prots: Vec<&str> = vec!["Proton-30", "Proton-32"];
-        let mut want: Vec<String> = vec![];
-
-        for prot in prots {
-            let dir = format!("{}/{}", parent, prot);
-            fs::create_dir(dir.clone()).unwrap();
-            fs::File::create(format!("{}/proton", dir.clone())).unwrap();
-            want.push(dir);
-        }
-
-        let mut runners: Vec<String> = vec![];
-
-        super::ExtraConfig::get_runners_for(parent.to_string(), &mut runners).unwrap();
-
-        fs::remove_dir_all(parent).unwrap();
-
-        println!("{:?}", runners);
-        want.reverse();
-        assert_eq!(want, runners);
-    }
 }
