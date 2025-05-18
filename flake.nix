@@ -5,11 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     crane.url = "github:ipetkov/crane";
     crane.inputs.nixpkgs.follows = "nixpkgs";
-
-    umu = {
-      url = "git+https://github.com/Open-Wine-Components/umu-launcher/?dir=packaging\/nix&submodules=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = {
@@ -17,7 +12,6 @@
     flake-utils,
     nixpkgs,
     crane,
-    umu,
   }:
     flake-utils.lib.eachDefaultSystem (
       system: let
@@ -31,9 +25,7 @@
         # For `nix build` & `nix run`:
         packages.default = craneLib.buildPackage {
           src = craneLib.cleanCargoSource (craneLib.path ./.);
-          cargoExtraArgs = "--features nixos";
-
-          propagatedBuildInputs = [umu.packages.${pkgs.system}.umu];
+          propagatedBuildInputs = [pkgs.umu-launcher];
 
           # Add extra inputs here or any other derivation settings
           # doCheck = true;
@@ -43,7 +35,7 @@
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [cargo rustc rustfmt rust-analyzer clippy umu.packages.${pkgs.system}.umu python3];
+          nativeBuildInputs = with pkgs; [cargo rustc rustfmt rust-analyzer clippy umu-launcher];
           shellHook = ''
             export PATH="$PATH:/home/me/.cargo/bin"
           '';
